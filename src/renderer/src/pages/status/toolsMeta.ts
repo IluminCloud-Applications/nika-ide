@@ -33,6 +33,15 @@ export const TOOLS_META: Omit<ToolStatus, 'version' | 'installed'>[] = [
     required: true,
   },
   {
+    id: 'wsl',
+    name: 'wsl',
+    label: 'WSL 2',
+    description: 'Windows Subsystem for Linux — necessário para rodar o Docker no Windows.',
+    installUrl: 'https://learn.microsoft.com/en-us/windows/wsl/install',
+    category: 'runtime',
+    required: true,
+  },
+  {
     id: 'docker',
     name: 'docker',
     label: 'Docker',

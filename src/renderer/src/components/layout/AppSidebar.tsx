@@ -1,37 +1,6 @@
-import React from 'react'
-import { FolderKanban, ShieldCheck, Settings, Bot, Palette, Container } from 'lucide-react'
+import { FolderKanban, ShieldCheck, Settings, Bot, Palette, Container, Brush, Brain, MessageSquareCode } from 'lucide-react'
 import { Theme } from '../../pages/settings/ThemeSelector'
 import faviconUrl from '../../assets/favicon.webp'
-
-function RiChatAi2Line({ className, ...props }: React.HTMLAttributes<HTMLElement> & { strokeWidth?: number }) {
-  return (
-    <i
-      className={`ri-chat-ai-2-line flex items-center justify-center ${className || ''}`}
-      {...props}
-      style={{ fontSize: '18px', width: '18px', height: '18px', lineHeight: 1, color: 'currentColor' }}
-    />
-  )
-}
-
-function RiBrainAi3Line({ className, ...props }: React.HTMLAttributes<HTMLElement> & { strokeWidth?: number }) {
-  return (
-    <i
-      className={`ri-brain-ai-3-line flex items-center justify-center ${className || ''}`}
-      {...props}
-      style={{ fontSize: '18px', width: '18px', height: '18px', lineHeight: 1, color: 'currentColor' }}
-    />
-  )
-}
-
-function RiBrushAiLine({ className, ...props }: React.HTMLAttributes<HTMLElement> & { strokeWidth?: number }) {
-  return (
-    <i
-      className={`ri-brush-ai-line flex items-center justify-center ${className || ''}`}
-      {...props}
-      style={{ fontSize: '18px', width: '18px', height: '18px', lineHeight: 1, color: 'currentColor' }}
-    />
-  )
-}
 
 function McpIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -68,11 +37,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: 'projects', label: 'Projetos',       icon: FolderKanban,   enabled: true,  group: 'main' },
-  { id: 'studio',   label: 'Estúdio',        icon: RiBrushAiLine,  enabled: true,  group: 'main' },
+  { id: 'studio',   label: 'Estúdio',        icon: Brush,          enabled: true,  group: 'main' },
   { id: 'agents',   label: 'Agentes',        icon: Bot,            enabled: true,  group: 'main' },
   { id: 'mcp',      label: 'MCP',            icon: McpIcon,        enabled: true,  group: 'main' },
-  { id: 'skills',   label: 'Skills',         icon: RiBrainAi3Line, enabled: true,  group: 'main' },
-  { id: 'prompts',  label: 'Prompts',        icon: RiChatAi2Line,  enabled: true,  group: 'main' },
+  { id: 'skills',   label: 'Skills',         icon: Brain,          enabled: true,  group: 'main' },
+  { id: 'prompts',  label: 'Prompts',        icon: MessageSquareCode,  enabled: true,  group: 'main' },
   { id: 'status',   label: 'Status',         icon: ShieldCheck,    enabled: true,  group: 'bottom' },
   { id: 'docker',   label: 'Gestão',          icon: Container,      enabled: true,  group: 'bottom' },
   { id: 'settings', label: 'Configurações',  icon: Settings,       enabled: true,  group: 'bottom' },

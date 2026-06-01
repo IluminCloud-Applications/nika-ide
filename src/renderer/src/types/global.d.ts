@@ -66,6 +66,7 @@ declare global {
       }
       system: {
         getVersion: () => Promise<string>
+        getPlatform: () => Promise<string>
         checkTools: () => Promise<Array<{ id: string; name: string; version: string | null; installed: boolean }>>
         checkTool: (id: string) => Promise<{ id: string; name: string; version: string | null; installed: boolean }>
         openUrl: (url: string) => Promise<{ success: boolean }>

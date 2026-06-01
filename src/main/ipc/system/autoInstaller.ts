@@ -1,5 +1,6 @@
 import { execSync, spawn } from 'node:child_process'
 import os from 'node:os'
+import fs from 'node:fs'
 import { BrowserWindow } from 'electron'
 import { INSTALL_REGISTRY, PlatformKey, PLATFORM_LABELS } from './installCommands'
 
@@ -113,6 +114,14 @@ function runInlineInstall(toolId: string, command: string, platform: string): Pr
     child.on('close', (code) => {
       const win = BrowserWindow.getAllWindows()[0]
       if (win) win.webContents.send('system:install-progress', { toolId, data: '', done: true, success: code === 0 })
+      
+      if (code === 0 && toolId === 'docker' && platform === 'win32') {
+        const dockerPath = 'C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe'
+        if (fs.existsSync(dockerPath)) {
+          spawn(dockerPath, [], { detached: true, stdio: 'ignore' }).unref()
+        }
+      }
+
       resolve({ success: code === 0, toolId, platform, output, mode: 'inline', error: code !== 0 ? `Process exited with code ${code}` : undefined })
     })
 

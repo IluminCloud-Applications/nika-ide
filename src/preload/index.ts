@@ -121,6 +121,7 @@ contextBridge.exposeInMainWorld('api', {
   },
   system: {
     getVersion: () => ipcRenderer.invoke('system:get-version'),
+    getPlatform: () => ipcRenderer.invoke('system:get-platform'),
     checkTools: () => ipcRenderer.invoke('system:check-tools'),
     checkTool: (id: string) => ipcRenderer.invoke('system:check-tool', id),
     openUrl: (url: string) => ipcRenderer.invoke('system:open-url', url),

@@ -2,6 +2,7 @@ import { app, ipcMain, shell } from 'electron'
 import { execSync, spawn } from 'node:child_process'
 import os from 'node:os'
 import { getInstallInfo, autoInstallTool } from './system/autoInstaller'
+import { refreshWindowsPath } from './system/windowsPathHelper'
 
 interface ToolCheckResult {
   id: string
@@ -13,21 +14,38 @@ interface ToolCheckResult {
 
 type CheckFn = () => string
 
+const execOptions = {
+  encoding: 'utf-8' as const,
+  timeout: 5000,
+  shell: os.platform() === 'win32' ? 'cmd.exe' : undefined
+}
+
 const TOOL_CHECKS: Record<string, CheckFn> = {
-  git:    () => execSync('git --version',    { encoding: 'utf-8', timeout: 5000 }).trim(),
-  node:   () => execSync('node --version',   { encoding: 'utf-8', timeout: 5000 }).trim(),
-  npm:    () => execSync('npm --version',    { encoding: 'utf-8', timeout: 5000 }).trim(),
-  docker: () => execSync('docker --version', { encoding: 'utf-8', timeout: 5000 }).trim(),
-  python: () => {
-    try { return execSync('python3 --version', { encoding: 'utf-8', timeout: 5000 }).trim() }
-    catch { return execSync('python --version',  { encoding: 'utf-8', timeout: 5000 }).trim() }
+  git:    () => execSync('git --version',    execOptions).trim(),
+  node:   () => execSync('node --version',   execOptions).trim(),
+  npm:    () => execSync('npm --version',    execOptions).trim(),
+  wsl:    () => {
+    if (os.platform() !== 'win32') return 'installed'
+    return execSync('wsl --version', execOptions).trim()
   },
-  claude: () => execSync('claude --version', { encoding: 'utf-8', timeout: 5000 }).trim(),
-  agy:    () => execSync('agy --version',    { encoding: 'utf-8', timeout: 5000 }).trim(),
-  codex:  () => execSync('codex --version',  { encoding: 'utf-8', timeout: 5000 }).trim(),
+  docker: () => execSync('docker --version', execOptions).trim(),
+  python: () => {
+    try { return execSync('python3 --version', execOptions).trim() }
+    catch { return execSync('python --version',  execOptions).trim() }
+  },
+  claude: () => execSync('claude --version', execOptions).trim(),
+  agy:    () => execSync('agy --version',    execOptions).trim(),
+  codex:  () => execSync('codex --version',  execOptions).trim(),
 }
 
 function checkTool(id: string): ToolCheckResult {
+  if (os.platform() === 'win32') {
+    try {
+      refreshWindowsPath()
+    } catch (err) {
+      console.error('Failed to refresh Windows PATH:', err)
+    }
+  }
   const fn = TOOL_CHECKS[id]
   if (!fn) return { id, name: id, version: null, installed: false, error: 'Unknown tool' }
   try {
@@ -48,6 +66,7 @@ function buildInstallPrompt(missing: string[]): string {
     git:    'Git (controle de versão)',
     node:   'Node.js (runtime JavaScript, versão LTS)',
     npm:    'npm (vem junto com o Node.js)',
+    wsl:    'WSL 2 (Windows Subsystem for Linux)',
     docker: 'Docker Desktop (ou Docker Engine no Linux)',
     python: 'Python 3 (versão 3.11 ou superior)',
     claude: 'Claude CLI da Anthropic (claude)',
@@ -96,6 +115,10 @@ function openTerminalWithCommand(command: string): void {
 export function registerSystemHandlers() {
   ipcMain.handle('system:get-version', async () => {
     return app.getVersion()
+  })
+
+  ipcMain.handle('system:get-platform', async () => {
+    return os.platform()
   })
 
   ipcMain.handle('system:check-tools', async () => {

@@ -23,6 +23,11 @@ export const INSTALL_REGISTRY: Record<string, PlatformInstalls> = {
     darwin: { auto: 'xcode-select --install',                                                                   url: 'https://git-scm.com/downloads/mac',   interactive: true },
     win32:  { auto: 'winget install --id Git.Git -e --accept-source-agreements --accept-package-agreements',     url: 'https://git-scm.com/downloads/win',   interactive: false },
   },
+  wsl: {
+    linux:  { auto: null, url: 'https://learn.microsoft.com/en-us/windows/wsl/install', interactive: false },
+    darwin: { auto: null, url: 'https://learn.microsoft.com/en-us/windows/wsl/install', interactive: false },
+    win32:  { auto: 'wsl --install && wsl --update',                                     url: 'https://learn.microsoft.com/en-us/windows/wsl/install', interactive: true },
+  },
   node: {
     linux:  { auto: null,                                                                                              url: 'https://nodejs.org/en/download', interactive: false },
     darwin: { auto: 'brew install node',                                                                               url: 'https://nodejs.org/en/download', interactive: false },

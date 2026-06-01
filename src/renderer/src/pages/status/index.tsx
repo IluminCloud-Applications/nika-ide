@@ -16,6 +16,7 @@ export default function StatusPage() {
   const [aiDone, setAiDone]                = useState(false)
   const [modalTool, setModalTool]          = useState<ToolStatus | null>(null)
   const [installingIds, setInstallingIds]  = useState<Set<string>>(new Set())
+  const [platform, setPlatform]            = useState<string | null>(null)
 
   const runAllChecks = useCallback(async () => {
     setGlobalLoading(true)
@@ -68,13 +69,23 @@ export default function StatusPage() {
     }
   }
 
-  useEffect(() => { runAllChecks() }, [runAllChecks])
+  useEffect(() => {
+    window.api.system.getPlatform().then(setPlatform).catch(console.error)
+    runAllChecks()
+  }, [runAllChecks])
 
-  const tools: ToolStatus[] = TOOLS_META.map(meta => ({
-    ...meta,
-    version: checks[meta.id]?.version ?? null,
-    installed: checks[meta.id]?.installed ?? false,
-  }))
+  const tools: ToolStatus[] = TOOLS_META
+    .filter(meta => {
+      if (meta.id === 'wsl') {
+        return platform === 'win32'
+      }
+      return true
+    })
+    .map(meta => ({
+      ...meta,
+      version: checks[meta.id]?.version ?? null,
+      installed: checks[meta.id]?.installed ?? false,
+    }))
 
   const totalInstalled   = tools.filter(t => t.installed).length
   const totalMissing     = tools.filter(t => !t.installed && !checks[t.id]?.loading)

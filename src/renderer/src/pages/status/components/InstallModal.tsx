@@ -54,6 +54,26 @@ export default function InstallModal({
     return unsub
   }, [phase, toolId, onInstallComplete])
 
+  // Polling to automatically detect if the tool was installed during execution
+  useEffect(() => {
+    if (phase !== 'installing' && phase !== 'terminal_opened') return
+
+    const interval = setInterval(async () => {
+      try {
+        const result = await window.api.system.checkTool(toolId)
+        if (result.installed) {
+          setPhase('success')
+          onInstallComplete(toolId)
+          clearInterval(interval)
+        }
+      } catch (err) {
+        console.error('Error rechecking tool status during install:', err)
+      }
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [phase, toolId, onInstallComplete])
+
   useEffect(() => {
     if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight
   }, [output])
@@ -62,15 +82,25 @@ export default function InstallModal({
 
   const handleAutoInstall = async () => {
     setOutput('')
-    const result = await window.api.system.autoInstallTool(toolId)
+    setPhase('installing') // Define a fase instalando imediatamente para remover o lag visual
+    
+    try {
+      const result = await window.api.system.autoInstallTool(toolId)
 
-    if (result.mode === 'terminal') {
-      // Interactive install — terminal was opened externally
-      setPhase(result.success ? 'terminal_opened' : 'error')
-      if (!result.success) setOutput(result.error || 'Falha ao abrir o terminal.')
-    } else {
-      // Inline install — phase was already set to 'installing' by progress events
-      setPhase('installing')
+      if (result.mode === 'terminal') {
+        // Interactive install — terminal was opened externally
+        setPhase(result.success ? 'terminal_opened' : 'error')
+        if (!result.success) setOutput(result.error || 'Falha ao abrir o terminal.')
+      } else {
+        // Inline install - if the promise resolved with error and we didn't succeed via polling
+        if (!result.success) {
+          setPhase(prev => (prev === 'success' ? 'success' : 'error'))
+          setOutput(prev => prev || result.error || 'Falha na instalação.')
+        }
+      }
+    } catch (err: any) {
+      setPhase(prev => (prev === 'success' ? 'success' : 'error'))
+      setOutput(prev => prev || err?.message || 'Erro inesperado na instalação.')
     }
   }
 
