@@ -6,6 +6,9 @@ on:
       - 'v*' # Roda quando uma tag de versão for publicada, ex: v1.0.0
   workflow_dispatch: # Permite disparar manualmente via painel do GitHub Actions
 
+permissions:
+  contents: write
+
 jobs:
   release:
     name: Build & Release
