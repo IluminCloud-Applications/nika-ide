@@ -71,7 +71,8 @@ declare global {
         checkTool: (id: string) => Promise<{ id: string; name: string; version: string | null; installed: boolean }>
         openUrl: (url: string) => Promise<{ success: boolean }>
         openPath: (path: string) => Promise<{ success: boolean; error?: string }>
-        installWithAI: (missingToolIds: string[]) => Promise<{ success: boolean; reason?: string }>
+        installWithAI: (missingToolIds: string[], cliId?: string) => Promise<{ success: boolean; reason?: string }>
+        getInstallPrompt: (missingToolIds: string[]) => Promise<string>
         getWebviewPreloadPath: () => Promise<string>
         getInstallInfo: (toolId: string) => Promise<{
           canAutoInstall: boolean

@@ -15,7 +15,7 @@ Criamos um script que faz todo o processo por você (atualiza o `package.json`, 
 
 **Exemplo:**
 ```bash
-./scripts/release.sh 0.3.5
+./scripts/release.sh 0.3.6
 ```
 
 ---

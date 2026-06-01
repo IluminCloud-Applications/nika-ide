@@ -58,7 +58,11 @@ function openTerminalForInstall(command: string): void {
     const script = `tell application "Terminal" to do script "${command.replace(/"/g, '\\"')}"`
     spawn('osascript', ['-e', script], { detached: true, stdio: 'ignore' }).unref()
   } else {
-    spawn('cmd', ['/c', 'start', 'cmd', '/k', command], { detached: true, stdio: 'ignore' }).unref()
+    if (command.includes('powershell') || command.includes('irm') || command.includes('iex')) {
+      spawn('cmd', ['/c', 'start', '""', 'powershell', '-NoExit', '-Command', command], { detached: true, stdio: 'ignore' }).unref()
+    } else {
+      spawn('cmd', ['/c', 'start', '""', 'cmd', '/k', command], { detached: true, stdio: 'ignore' }).unref()
+    }
   }
 }
 

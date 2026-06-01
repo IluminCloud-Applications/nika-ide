@@ -1,16 +1,15 @@
-import { Loader2, CheckCircle2, RefreshCw, Sparkles } from 'lucide-react'
+import { CheckCircle2, RefreshCw, Sparkles } from 'lucide-react'
 
 interface StatusHeaderProps {
   hasMissing: boolean
   globalLoading: boolean
-  aiInstalling: boolean
   aiDone: boolean
   onInstallWithAI: () => void
   onRunAllChecks: () => void
 }
 
 export default function StatusHeader({
-  hasMissing, globalLoading, aiInstalling, aiDone,
+  hasMissing, globalLoading, aiDone,
   onInstallWithAI, onRunAllChecks
 }: StatusHeaderProps) {
   return (
@@ -23,19 +22,17 @@ export default function StatusHeader({
         {hasMissing && (
           <button
             onClick={onInstallWithAI}
-            disabled={aiInstalling || globalLoading}
+            disabled={globalLoading}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 shadow
               ${aiDone
                 ? 'bg-emerald-600 text-white'
                 : 'bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white shadow-violet-500/20'
               }
-              disabled:opacity-60 disabled:cursor-wait
+              disabled:opacity-60 disabled:cursor-pointer
             `}
           >
-            {aiInstalling ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Abrindo terminal...</>
-            ) : aiDone ? (
+            {aiDone ? (
               <><CheckCircle2 className="w-4 h-4" /> Terminal aberto!</>
             ) : (
               <><Sparkles className="w-4 h-4" /> Instalar com IA</>

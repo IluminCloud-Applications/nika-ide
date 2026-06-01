@@ -164,12 +164,26 @@ export function registerSystemHandlers() {
     return autoInstallTool(toolId)
   })
 
-  ipcMain.handle('system:install-with-ai', async (_, missingToolIds: string[]) => {
+  ipcMain.handle('system:get-install-prompt', async (_, missingToolIds: string[]) => {
+    return buildInstallPrompt(missingToolIds)
+  })
+
+  ipcMain.handle('system:install-with-ai', async (_, missingToolIds: string[], cliId?: string) => {
     if (!missingToolIds.length) return { success: false, reason: 'no_missing_tools' }
 
     const prompt = buildInstallPrompt(missingToolIds)
     const escaped = prompt.replace(/"/g, '\\"').replace(/\n/g, '\\n')
-    const command = `agy --dangerously-skip-permissions "${escaped}"`
+    
+    let command = ''
+    if (cliId === 'claude') {
+      command = `claude "${escaped}"`
+    } else if (cliId === 'agy') {
+      command = `agy --dangerously-skip-permissions "${escaped}"`
+    } else if (cliId === 'codex') {
+      command = `codex "${escaped}"`
+    } else {
+      command = `agy --dangerously-skip-permissions "${escaped}"`
+    }
 
     try {
       openTerminalWithCommand(command)

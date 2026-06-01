@@ -61,7 +61,7 @@ export const INSTALL_REGISTRY: Record<string, PlatformInstalls> = {
   codex: {
     linux:  { auto: 'curl -fsSL https://chatgpt.com/codex/install.sh | sh',                          url: 'https://developers.openai.com/codex/cli', interactive: true },
     darwin: { auto: 'curl -fsSL https://chatgpt.com/codex/install.sh | sh',                          url: 'https://developers.openai.com/codex/cli', interactive: true },
-    win32:  { auto: 'powershell -ExecutionPolicy ByPass -c "irm https://chatgpt.com/codex/install.ps1 | iex"', url: 'https://developers.openai.com/codex/cli', interactive: true },
+    win32:  { auto: 'irm https://chatgpt.com/codex/install.ps1 | iex', url: 'https://developers.openai.com/codex/cli', interactive: true },
   },
 }
 

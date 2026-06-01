@@ -6,17 +6,18 @@ import StatusHeader from './components/StatusHeader'
 import StatusBanner from './components/StatusBanner'
 import PageShell from '../../components/layout/PageShell'
 import { TOOLS_META } from './toolsMeta'
+import InstallWithAIModal from './components/InstallWithAIModal'
 
 type CheckState = Record<string, { version: string | null; installed: boolean; loading: boolean }>
 
 export default function StatusPage() {
   const [checks, setChecks]               = useState<CheckState>({})
   const [globalLoading, setGlobalLoading]  = useState(false)
-  const [aiInstalling, setAiInstalling]    = useState(false)
   const [aiDone, setAiDone]                = useState(false)
   const [modalTool, setModalTool]          = useState<ToolStatus | null>(null)
   const [installingIds, setInstallingIds]  = useState<Set<string>>(new Set())
   const [platform, setPlatform]            = useState<string | null>(null)
+  const [isAiModalOpen, setIsAiModalOpen]  = useState(false)
 
   const runAllChecks = useCallback(async () => {
     setGlobalLoading(true)
@@ -54,25 +55,19 @@ export default function StatusPage() {
     await recheckSingle(toolId)
   }, [])
 
-  const handleInstallWithAI = async () => {
-    const missingIds = tools.filter(t => !t.installed).map(t => t.id)
-    if (!missingIds.length) return
-    setAiInstalling(true)
-    try {
-      await window.api.system.installWithAI(missingIds)
-      setAiDone(true)
-      setTimeout(() => setAiDone(false), 3000)
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setAiInstalling(false)
-    }
+  const handleInstallWithAI = () => {
+    setIsAiModalOpen(true)
   }
 
   useEffect(() => {
     window.api.system.getPlatform().then(setPlatform).catch(console.error)
     runAllChecks()
   }, [runAllChecks])
+
+  const hasAnyAi = Object.keys(checks).some(id => {
+    const meta = TOOLS_META.find(m => m.id === id)
+    return meta?.category === 'ai' && checks[id]?.installed
+  })
 
   const tools: ToolStatus[] = TOOLS_META
     .filter(meta => {
@@ -81,11 +76,18 @@ export default function StatusPage() {
       }
       return true
     })
-    .map(meta => ({
-      ...meta,
-      version: checks[meta.id]?.version ?? null,
-      installed: checks[meta.id]?.installed ?? false,
-    }))
+    .map(meta => {
+      let required = meta.required
+      if (meta.category === 'ai') {
+        required = !hasAnyAi
+      }
+      return {
+        ...meta,
+        required,
+        version: checks[meta.id]?.version ?? null,
+        installed: checks[meta.id]?.installed ?? false,
+      }
+    })
 
   const totalInstalled   = tools.filter(t => t.installed).length
   const totalMissing     = tools.filter(t => !t.installed && !checks[t.id]?.loading)
@@ -104,7 +106,6 @@ export default function StatusPage() {
       <StatusHeader
         hasMissing={hasMissing}
         globalLoading={globalLoading}
-        aiInstalling={aiInstalling}
         aiDone={aiDone}
         onInstallWithAI={handleInstallWithAI}
         onRunAllChecks={runAllChecks}
@@ -160,6 +161,19 @@ export default function StatusPage() {
           isOpen={!!modalTool}
           onClose={() => setModalTool(null)}
           onInstallComplete={handleInstallComplete}
+        />
+      )}
+
+      {isAiModalOpen && (
+        <InstallWithAIModal
+          isOpen={isAiModalOpen}
+          onClose={() => setIsAiModalOpen(false)}
+          missingToolIds={tools.filter(t => !t.installed).map(t => t.id)}
+          checks={checks}
+          onInstallStarted={() => {
+            setAiDone(true)
+            setTimeout(() => setAiDone(false), 3000)
+          }}
         />
       )}
     </PageShell>
