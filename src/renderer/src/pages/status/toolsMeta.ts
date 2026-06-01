@@ -1,0 +1,80 @@
+import { ToolStatus } from './components/ToolCard'
+
+/**
+ * Metadata for all tools that Nika IDE checks on the Status page.
+ * version & installed are set dynamically at runtime — only static info here.
+ */
+export const TOOLS_META: Omit<ToolStatus, 'version' | 'installed'>[] = [
+  {
+    id: 'git',
+    name: 'git',
+    label: 'Git',
+    description: 'Controle de versão — necessário para histórico de projetos, rollback e publicação de versões.',
+    installUrl: 'https://git-scm.com/downloads',
+    category: 'core',
+    required: true,
+  },
+  {
+    id: 'node',
+    name: 'node',
+    label: 'Node.js',
+    description: 'Runtime JavaScript — necessário para rodar o frontend React dos projetos.',
+    installUrl: 'https://nodejs.org/en/download',
+    category: 'runtime',
+    required: true,
+  },
+  {
+    id: 'npm',
+    name: 'npm',
+    label: 'npm',
+    description: 'Gerenciador de pacotes do Node.js — instalado automaticamente com o Node.',
+    installUrl: 'https://nodejs.org/en/download',
+    category: 'runtime',
+    required: true,
+  },
+  {
+    id: 'docker',
+    name: 'docker',
+    label: 'Docker',
+    description: 'Contêineres — necessário para rodar o backend Python com Redis, PostgreSQL e outros serviços.',
+    installUrl: 'https://docs.docker.com/get-docker/',
+    category: 'runtime',
+    required: true,
+  },
+  {
+    id: 'python',
+    name: 'python',
+    label: 'Python 3',
+    description: 'Linguagem do backend — usada pela IA para gerar APIs com FastAPI.',
+    installUrl: 'https://www.python.org/downloads/',
+    category: 'runtime',
+    required: false,
+  },
+  {
+    id: 'claude',
+    name: 'claude',
+    label: 'Claude CLI',
+    description: 'CLI da Anthropic para usar Claude Code diretamente no terminal integrado do app.',
+    installUrl: 'https://docs.anthropic.com/en/docs/claude-code',
+    category: 'ai',
+    required: false,
+  },
+  {
+    id: 'agy',
+    name: 'agy',
+    label: 'Antigravity CLI',
+    description: 'CLI do Google Gemini (Antigravity). Use com: agy --dangerously-skip-permissions',
+    installUrl: 'https://antigravity.google/docs/cli-getting-started',
+    category: 'ai',
+    required: false,
+  },
+  {
+    id: 'codex',
+    name: 'codex',
+    label: 'Codex CLI',
+    description: 'CLI do OpenAI Codex para interação com a base de código diretamente no terminal.',
+    installUrl: 'https://developers.openai.com/codex/cli',
+    category: 'ai',
+    required: false,
+  },
+]

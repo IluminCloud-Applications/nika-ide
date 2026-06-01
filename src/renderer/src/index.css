@@ -1,0 +1,605 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS  (CSS variables)
+   Used by Tailwind semantic classes AND by any
+   custom .class below. Never write hex colors
+   directly in components — use these or Tailwind
+   named colors (zinc, blue, etc.) instead.
+───────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --surface-base:    #09090b;
+  --surface-raised:  #0e0e11;
+  --surface-overlay: #141417;
+  --surface-sidebar: #0c0c0e;
+
+  /* Text */
+  --tx-primary:   #fafafa;
+  --tx-secondary: #a1a1aa;
+  --tx-muted:     #71717a;
+  --tx-faint:     #3f3f46;
+
+  /* Lines / borders */
+  --line:        #27272a;
+  --line-subtle: rgba(39,39,42,0.5);
+
+  /* Glass tint */
+  --glass-bg:     rgba(18,18,20,0.65);
+  --glass-border: rgba(255,255,255,0.06);
+}
+
+/* ── Light theme overrides ── */
+.light {
+  color-scheme: light;
+
+  --surface-base:    #f4f4f6;
+  --surface-raised:  #ffffff;
+  --surface-overlay: #f0f0f2;
+  --surface-sidebar: #ffffff;
+
+  --tx-primary:   #09090b;
+  --tx-secondary: #3f3f46;
+  --tx-muted:     #71717a;
+  --tx-faint:     #a1a1aa;
+
+  --line:        #e4e4e7;
+  --line-subtle: rgba(228,228,231,0.6);
+
+  --glass-bg:     rgba(255,255,255,0.88);
+  --glass-border: rgba(0,0,0,0.07);
+}
+
+/* ── Obsidian theme overrides ── */
+.obsidian {
+  color-scheme: dark;
+
+  --surface-base:    #1a1a1a;
+  --surface-raised:  #202020;
+  --surface-overlay: #2e2e2e;
+  --surface-sidebar: #161616;
+
+  --tx-primary:   #e3e3e3;
+  --tx-secondary: #a6a6a6;
+  --tx-muted:     #787878;
+  --tx-faint:     #4a4a4a;
+
+  --line:        #333333;
+  --line-subtle: rgba(51,51,51,0.5);
+
+  --glass-bg:     rgba(26,26,26,0.8);
+  --glass-border: rgba(255,255,255,0.05);
+}
+
+/* ── Notion theme overrides ── */
+.notion {
+  color-scheme: light;
+
+  --surface-base:    #fbfbfa;
+  --surface-raised:  #ffffff;
+  --surface-overlay: #f1f1ef;
+  --surface-sidebar: #f7f7f5;
+
+  --tx-primary:   #37352f;
+  --tx-secondary: #5f5e5b;
+  --tx-muted:     #9b9a97;
+  --tx-faint:     #c1c0bd;
+
+  --line:        #e9e9e6;
+  --line-subtle: rgba(233,233,230,0.6);
+
+  --glass-bg:     rgba(251,251,250,0.9);
+  --glass-border: rgba(55,53,47,0.08);
+}
+
+/* ── Nord theme overrides ── */
+.nord {
+  color-scheme: dark;
+
+  --surface-base:    #2e3440;
+  --surface-raised:  #3b4252;
+  --surface-overlay: #434c5e;
+  --surface-sidebar: #242933;
+
+  --tx-primary:   #d8dee9;
+  --tx-secondary: #e5e9f0;
+  --tx-muted:     #81a1c1;
+  --tx-faint:     #4c566a;
+
+  --line:        #3b4252;
+  --line-subtle: rgba(76,86,106,0.4);
+
+  --glass-bg:     rgba(46,52,64,0.8);
+  --glass-border: rgba(216,222,233,0.05);
+}
+
+/* ── Nika theme overrides (deus do sol — sol da meia-noite) ── */
+.nika {
+  color-scheme: dark;
+
+  --surface-base:    #15110a;
+  --surface-raised:  #1f1810;
+  --surface-overlay: #2a2113;
+  --surface-sidebar: #100d07;
+
+  --tx-primary:   #fdf3df;
+  --tx-secondary: #d9c4a0;
+  --tx-muted:     #a8916b;
+  --tx-faint:     #5c4f38;
+
+  --line:        #3a2f1c;
+  --line-subtle: rgba(58,47,28,0.5);
+
+  --glass-bg:     rgba(31,24,16,0.82);
+  --glass-border: rgba(255,200,120,0.08);
+}
+
+/* ── Nika Light theme overrides (aurora dourada — amanhecer) ── */
+.nika-light {
+  color-scheme: light;
+
+  --surface-base:    #fdf6e9;
+  --surface-raised:  #fffdf7;
+  --surface-overlay: #faf0db;
+  --surface-sidebar: #fbf3e3;
+
+  --tx-primary:   #3d2f17;
+  --tx-secondary: #6b5530;
+  --tx-muted:     #9c8456;
+  --tx-faint:     #c8b48a;
+
+  --line:        #ecdcc0;
+  --line-subtle: rgba(236,220,192,0.6);
+
+  --glass-bg:     rgba(253,246,233,0.9);
+  --glass-border: rgba(61,47,23,0.08);
+}
+
+/* ── Typewriter theme overrides ── */
+.typewriter {
+  color-scheme: light;
+
+  --surface-base:    #f4eedd;
+  --surface-raised:  #faf6eb;
+  --surface-overlay: #ebe3ce;
+  --surface-sidebar: #e5dcbf;
+
+  --tx-primary:   #322f28;
+  --tx-secondary: #5c574a;
+  --tx-muted:     #8f8774;
+  --tx-faint:     #b8b09c;
+
+  --line:        #d4cbb3;
+  --line-subtle: rgba(212,203,179,0.6);
+
+  --glass-bg:     rgba(244,238,221,0.9);
+  --glass-border: rgba(50,47,40,0.08);
+}
+
+
+/* ─────────────────────────────────────────────
+   COMPONENT CLASSES  (semantic, theme-aware)
+   Use these in JSX instead of inline zinc-* stacks.
+   They auto-adapt to light/dark via CSS vars.
+───────────────────────────────────────────── */
+@layer components {
+
+  /* ── Page shells ── */
+  .page-root {
+    @apply flex-1 flex flex-col min-h-0 overflow-y-auto;
+    background-color: var(--surface-base);
+    color: var(--tx-primary);
+  }
+
+  .page-header {
+    @apply px-8 pt-8 pb-6 shrink-0;
+    border-bottom: 1px solid var(--line-subtle);
+  }
+
+  .page-title {
+    @apply text-xl font-bold;
+    color: var(--tx-primary);
+  }
+
+  .page-subtitle {
+    @apply text-sm mt-1;
+    color: var(--tx-muted);
+  }
+
+  .page-body {
+    @apply flex-1 overflow-y-auto px-8 py-6;
+  }
+
+  /* ── Cards / panels ── */
+  .card, .card-hover {
+    @apply rounded-xl border;
+    background-color: var(--surface-raised);
+    border-color: var(--line);
+  }
+
+  .card-hover {
+    @apply transition-all duration-200;
+  }
+  .card-hover:hover {
+    border-color: rgba(59,130,246,0.35);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    transform: translateY(-1px);
+  }
+
+  .glass-panel {
+    backdrop-filter: blur(12px) saturate(140%);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-card {
+    backdrop-filter: blur(8px);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    @apply rounded-xl transition-all duration-200;
+  }
+  .glass-card:hover {
+    border-color: rgba(59,130,246,0.3);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  }
+
+  /* ── Section separators ── */
+  .section-label {
+    @apply flex items-center gap-2 mb-3;
+  }
+  .section-label h2 {
+    @apply text-xs font-semibold uppercase tracking-widest;
+    color: var(--tx-muted);
+  }
+  .section-label .divider {
+    @apply flex-1 h-px;
+    background-color: var(--line-subtle);
+  }
+
+  /* ── Inputs ── */
+  .input-field {
+    @apply w-full px-3 py-2 rounded-lg text-sm outline-none transition;
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--line);
+    color: var(--tx-primary);
+  }
+  .input-field::placeholder { color: var(--tx-faint); }
+  .input-field:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.18);
+  }
+
+  .glass-input {
+    backdrop-filter: blur(8px);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--tx-primary);
+    @apply rounded-lg px-3 py-2 text-sm outline-none transition-all duration-200;
+  }
+  .glass-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+  }
+
+  /* ── Buttons ── */
+  .btn, .btn-ghost, .btn-surface, .btn-primary, .btn-danger {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150;
+  }
+  .btn-ghost {
+    color: var(--tx-secondary);
+  }
+  .btn-ghost:hover {
+    background-color: var(--line-subtle);
+    color: var(--tx-primary);
+  }
+  .btn-surface {
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--line);
+    color: var(--tx-secondary);
+  }
+  .btn-surface:hover {
+    background-color: var(--line);
+    color: var(--tx-primary);
+  }
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-500 text-white;
+  }
+  .btn-danger {
+    @apply text-red-400;
+    background-color: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.25);
+  }
+  .btn-danger:hover { background-color: rgba(239,68,68,0.2); }
+
+  /* ── Text utilities ── */
+  .tx-primary   { color: var(--tx-primary);   }
+  .tx-secondary { color: var(--tx-secondary); }
+  .tx-muted     { color: var(--tx-muted);     }
+  .tx-faint     { color: var(--tx-faint);     }
+
+  /* ── Badge ── */
+  .badge {
+    @apply inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-md border;
+  }
+
+  /* ── Divider ── */
+  .divider-x {
+    @apply h-px w-full;
+    background-color: var(--line-subtle);
+  }
+  .divider-y {
+    @apply w-px;
+    background-color: var(--line-subtle);
+  }
+
+  /* ── Table ── */
+  .data-table {
+    @apply w-full border-collapse;
+  }
+  .data-table thead tr {
+    background-color: var(--surface-overlay);
+    border-bottom: 1px solid var(--line);
+  }
+  .data-table thead th {
+    @apply text-[11px] font-semibold uppercase tracking-wider px-4 py-2 text-left;
+    color: var(--tx-muted);
+  }
+  .data-table tbody tr {
+    border-bottom: 1px solid var(--line-subtle);
+    @apply transition-colors duration-100;
+  }
+  .data-table tbody tr:hover {
+    background-color: var(--surface-overlay);
+  }
+  .data-table tbody td {
+    @apply px-4 py-3 text-sm;
+    color: var(--tx-secondary);
+  }
+
+  /* ── Editor / Dashboard ── */
+  .editor-root {
+    background-color: var(--surface-base);
+    color: var(--tx-primary);
+  }
+
+  .editor-header {
+    @apply h-12 px-4 flex items-center justify-between flex-shrink-0;
+    background-color: var(--surface-raised);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-sidebar {
+    @apply flex flex-col flex-shrink-0;
+    background-color: var(--surface-sidebar);
+    border-right: 1px solid var(--line);
+  }
+
+  .editor-panel-header {
+    @apply h-10 px-3 flex items-center justify-between flex-shrink-0;
+    background-color: var(--surface-overlay);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-statusbar {
+    @apply h-7 px-4 flex items-center justify-between flex-shrink-0 text-[10px] font-medium;
+    background-color: var(--surface-raised);
+    border-top: 1px solid var(--line);
+  }
+
+  .editor-terminal {
+    @apply flex flex-col flex-shrink-0;
+    background-color: var(--surface-sidebar);
+    border-left: 1px solid var(--line);
+  }
+
+  .editor-terminal-header {
+    @apply h-11 px-3 flex items-center justify-between flex-shrink-0;
+    background-color: var(--surface-overlay);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-tabs-bar {
+    @apply flex items-center gap-1 px-2 py-1.5 overflow-x-auto;
+    background-color: var(--surface-overlay);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-tab {
+    @apply flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs cursor-pointer select-none transition-all duration-150 border;
+    border-color: transparent;
+    color: var(--tx-muted);
+  }
+  .editor-tab:hover {
+    color: var(--tx-secondary);
+    background-color: var(--line-subtle);
+  }
+  .editor-tab.active {
+    background-color: var(--surface-base);
+    border-color: var(--line);
+    color: var(--tx-primary);
+  }
+
+  .editor-preview-bar {
+    @apply h-10 px-3 flex items-center gap-2 flex-shrink-0;
+    background-color: var(--surface-raised);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editor-url-bar {
+    @apply flex-1 flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors;
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--line);
+    color: var(--tx-secondary);
+  }
+  .editor-url-bar:focus-within {
+    border-color: rgba(59,130,246,0.5);
+  }
+
+  .editor-center-tabs {
+    @apply flex items-center gap-0.5 p-0.5 rounded-lg;
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--line);
+  }
+  .editor-center-tab {
+    @apply flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150;
+    color: var(--tx-muted);
+  }
+  .editor-center-tab:hover { color: var(--tx-secondary); }
+  .editor-center-tab.active {
+    background-color: var(--surface-raised);
+    color: var(--tx-primary);
+    @apply shadow-sm;
+  }
+
+  .editor-icon-btn {
+    @apply p-1.5 rounded-md border transition;
+    border-color: var(--line);
+    color: var(--tx-muted);
+  }
+  .editor-icon-btn:hover {
+    color: var(--tx-secondary);
+    background-color: var(--surface-overlay);
+  }
+  .editor-icon-btn.active {
+    background-color: rgba(59,130,246,0.1);
+    border-color: rgba(59,130,246,0.4);
+    color: #60a5fa;
+  }
+
+  .editor-search-input {
+    @apply flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors;
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--line);
+  }
+  .editor-search-input:focus-within { border-color: var(--tx-muted); }
+  .editor-search-input input {
+    @apply bg-transparent text-[11px] outline-none w-full;
+    color: var(--tx-secondary);
+  }
+  .editor-search-input input::placeholder { color: var(--tx-faint); }
+
+  .editor-dropdown {
+    @apply rounded-lg shadow-xl z-50 overflow-hidden;
+    background-color: var(--surface-raised);
+    border: 1px solid var(--line);
+  }
+
+  .editor-dropdown-item {
+    @apply w-full flex items-center gap-2 px-3 py-2 text-xs transition;
+    color: var(--tx-secondary);
+  }
+  .editor-dropdown-item:hover {
+    background-color: var(--surface-overlay);
+    color: var(--tx-primary);
+  }
+
+  .editor-logs-panel {
+    @apply flex-shrink-0 flex flex-col;
+    background-color: var(--surface-raised);
+    border-top: 1px solid var(--line);
+  }
+
+  .editor-logs-header {
+    @apply h-8 px-3 flex items-center justify-between flex-shrink-0 cursor-pointer;
+    background-color: var(--surface-overlay);
+    border-bottom: 1px solid var(--line-subtle);
+    color: var(--tx-muted);
+  }
+  .editor-logs-header:hover { color: var(--tx-secondary); }
+
+  .editor-log-line {
+    @apply font-mono text-[10px] px-3 py-0.5 whitespace-pre-wrap break-all leading-relaxed;
+    color: var(--tx-secondary);
+  }
+
+
+
+  .editor-idle-state {
+    @apply flex-1 flex flex-col items-center justify-center p-8 text-center gap-5;
+    background-color: var(--surface-base);
+  }
+
+  .editor-loading-state {
+    @apply flex-1 flex flex-col items-center justify-center gap-6;
+    background-color: var(--surface-base);
+  }
+
+  .editor-quickprompts {
+    @apply flex flex-col flex-shrink-0;
+    border-top: 1px solid var(--line);
+    background-color: var(--surface-overlay);
+  }
+
+  .editor-quickprompts-header {
+    @apply w-full h-9 px-3 flex items-center justify-between transition-colors;
+    background-color: var(--surface-raised);
+    color: var(--tx-muted);
+  }
+  .editor-quickprompts-header:hover { color: var(--tx-secondary); }
+
+  .editor-prompt-item {
+    @apply w-full text-left p-2 rounded-lg flex flex-col gap-0.5 transition-all;
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--line-subtle);
+  }
+  .editor-prompt-item:hover {
+    border-color: var(--line);
+    background-color: var(--surface-raised);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   GLOBAL ELEMENT RESETS
+───────────────────────────────────────────── */
+
+/* Custom scrollbar */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--line); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--tx-faint); }
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.025em;
+}
+
+/* Table legacy compat */
+table { border-collapse: collapse; width: 100%; }
+
+/* ─────────────────────────────────────────────
+   MICRO-ANIMATIONS
+───────────────────────────────────────────── */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 0.22s cubic-bezier(0.4,0,0.2,1) both; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in 0.25s ease both; }
+
+/* Hover shimmer sweep */
+.hover-glow { position: relative; overflow: hidden; }
+.hover-glow::after {
+  content: '';
+  position: absolute; top: 0; left: -50%;
+  width: 200%; height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255,255,255,0.04), transparent);
+  transform: skewX(-25deg);
+  transition: 0.75s;
+}
+.hover-glow:hover::after { left: 125%; }
+
+/* Electron drag regions */
+.drag    { -webkit-app-region: drag; }
+.no-drag { -webkit-app-region: no-drag; }
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slide-in-right 0.22s cubic-bezier(0.4,0,0.2,1) both; }

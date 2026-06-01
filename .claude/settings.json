@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "remix-icon": {
+      "command": "npx",
+      "args": ["-y", "remixicon-mcp"]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": ["shadcn@latest", "mcp"]
+    }
+  }
+}
