@@ -32,8 +32,13 @@ export default function TerminalSession({
   useEffect(() => {
     if (isOpen) {
       init()
+      // Garante que o terminal seja redimensionado e atualizado ao ser reaberto
+      // evitando que fique com tela preta após mudança de visibilidade (display: none -> flex)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(refresh)
+      })
     }
-  }, [isOpen])
+  }, [isOpen, init, refresh])
 
   // ResizeObserver: usa refit (debounced 30ms) para evitar spam durante drag
   useEffect(() => {

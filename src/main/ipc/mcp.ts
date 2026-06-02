@@ -20,7 +20,7 @@ const DEFAULT_MCP_STATE: Record<string, McpStateInfo> = {
   'IluminMCP': { enabled: false },
   'context7': { enabled: false },
   'offerspro': { enabled: false },
-  'stripe': { enabled: false, apiKey: '<stripe_secret_key>' },
+  'stripe': { enabled: false },
   'asaas': { enabled: false }
 }
 
