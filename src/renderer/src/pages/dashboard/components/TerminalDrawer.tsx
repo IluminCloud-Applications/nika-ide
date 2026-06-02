@@ -5,6 +5,7 @@ import DrawerTabs from './terminal/TerminalTabs'
 import NotepadView from './terminal/NotepadView'
 import ResizeHandle from './terminal/ResizeHandle'
 import TerminalSession from './terminal/TerminalSession'
+import TerminalEmptyState from './terminal/TerminalEmptyState'
 import { useTerminalContext } from '../../../context/TerminalContext'
 
 const MIN_WIDTH     = 320
@@ -69,10 +70,8 @@ export default function TerminalDrawer({
   const removeTab = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     removeProjectTab(projectPath, id)
-    const remaining = tabs.filter(t => t.id !== id)
-    if (remaining.length === 0) {
-      onClose()
-    }
+    // When last tab is removed we stay open and show empty state
+    // so the user can create a new session without losing context
   }
 
   const renameTab = (id: string, name: string) => {
@@ -147,48 +146,59 @@ export default function TerminalDrawer({
           </div>
         </div>
 
-        {/* Tabs bar */}
-        <DrawerTabs
-          tabs={tabs}
-          activeTabId={activeTabId}
-          onSelectTab={(id) => setProjectActiveTabId(projectPath, id)}
-          onAddTerminal={addTerminal}
-          onAddNote={addNote}
-          onRemoveTab={removeTab}
-          onRenameTab={renameTab}
-          onReorderTabs={handleReorderTabs}
-        />
+        {/* Tabs bar — hidden when empty (empty state handles creation) */}
+        {tabs.length > 0 && (
+          <DrawerTabs
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelectTab={(id) => setProjectActiveTabId(projectPath, id)}
+            onAddTerminal={addTerminal}
+            onAddNote={addNote}
+            onRemoveTab={removeTab}
+            onRenameTab={renameTab}
+            onReorderTabs={handleReorderTabs}
+          />
+        )}
 
         {/* Content */}
-        {tabs.map((t) => {
-          if (t.type !== 'terminal') return null
-          const isActive = t.id === activeTabId
-          return (
-            <div
-              key={t.id}
-              style={{ display: isActive ? 'flex' : 'none' }}
-              className="flex-1 flex flex-col overflow-hidden p-2 animate-fade-in min-w-0 min-h-0"
-            >
-              <TerminalSession
-                projectPath={projectPath}
-                tab={t}
-                isOpen={isOpen && isActive}
-                drawerWidth={width}
-                onTerminalCreated={() => {}}
-                onTerminalExit={() => {}}
-              />
-            </div>
-          )
-        })}
-
-        {activeTab?.type === 'note' && (
-          <NotepadView
-            noteId={activeTab.id}
-            projectPath={projectPath}
-            terminalTabs={tabs}
-            onSendToTerminal={sendToTerminal}
-            onSelectTab={(id) => setProjectActiveTabId(projectPath, id)}
+        {tabs.length === 0 ? (
+          <TerminalEmptyState
+            onAddTerminal={addTerminal}
+            onAddNote={addNote}
           />
+        ) : (
+          <>
+            {tabs.map((t) => {
+              if (t.type !== 'terminal') return null
+              const isActive = t.id === activeTabId
+              return (
+                <div
+                  key={t.id}
+                  style={{ display: isActive ? 'flex' : 'none' }}
+                  className="flex-1 flex flex-col overflow-hidden p-2 animate-fade-in min-w-0 min-h-0"
+                >
+                  <TerminalSession
+                    projectPath={projectPath}
+                    tab={t}
+                    isOpen={isOpen && isActive}
+                    drawerWidth={width}
+                    onTerminalCreated={() => {}}
+                    onTerminalExit={() => {}}
+                  />
+                </div>
+              )
+            })}
+
+            {activeTab?.type === 'note' && (
+              <NotepadView
+                noteId={activeTab.id}
+                projectPath={projectPath}
+                terminalTabs={tabs}
+                onSendToTerminal={sendToTerminal}
+                onSelectTab={(id) => setProjectActiveTabId(projectPath, id)}
+              />
+            )}
+          </>
         )}
       </div>
     </>

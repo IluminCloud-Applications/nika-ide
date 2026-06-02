@@ -82,8 +82,8 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
   const getProjectState = useCallback((projectPath: string): ProjectState => {
     let baseState = projectStates[projectPath]
     if (!baseState) {
-      let tabs: Tab[] = [{ id: '1', name: 'Terminal 1', type: 'terminal', terminalId: null, connected: false }]
-      let activeTabId = '1'
+      let tabs: Tab[] = []
+      let activeTabId = ''
       try {
         const savedTabs = localStorage.getItem(`terminal_drawer_tabs:${projectPath}`)
         const savedActive = localStorage.getItem(`terminal_drawer_active_tab:${projectPath}`)
