@@ -1,6 +1,7 @@
 import { app, ipcMain, dialog } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { execSync, spawn, ChildProcess } from 'node:child_process'
 import { loadMcpState, syncMcpStateToProject } from './mcp'
 import { updateProjectInstructions } from './projectInstructions'
@@ -227,6 +228,19 @@ export function registerProjectHandlers() {
           .replace(/VITE_APP_NAME=.*/, `VITE_APP_NAME=${name}`)
           .replace(/VITE_APP_DESCRIPTION=.*/, `VITE_APP_DESCRIPTION=${description}`)
         fs.writeFileSync(envPath, envContent, 'utf-8')
+      }
+
+      // Inject random JWT_SECRET into backend .env
+      const backendEnvPath = path.join(projectPath, 'backend', '.env')
+      if (fs.existsSync(backendEnvPath)) {
+        let backendEnvContent = fs.readFileSync(backendEnvPath, 'utf-8')
+        const randomSecret = crypto.randomBytes(32).toString('hex')
+        if (backendEnvContent.includes('JWT_SECRET=')) {
+          backendEnvContent = backendEnvContent.replace(/JWT_SECRET=.*/, `JWT_SECRET=${randomSecret}`)
+        } else {
+          backendEnvContent += `\nJWT_SECRET=${randomSecret}\n`
+        }
+        fs.writeFileSync(backendEnvPath, backendEnvContent, 'utf-8')
       }
 
       // Replace tokens in frontend/index.html
