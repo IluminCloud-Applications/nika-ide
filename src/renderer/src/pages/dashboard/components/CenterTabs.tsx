@@ -1,7 +1,7 @@
 import { type ReactNode } from 'react'
-import { Globe, LayoutList, Database, Settings2 } from 'lucide-react'
+import { Globe, LayoutList, Database, Settings2, Lock } from 'lucide-react'
 
-export type CenterView = 'preview' | 'code' | 'tasks' | 'database' | 'system'
+export type CenterView = 'preview' | 'code' | 'tasks' | 'database' | 'system' | 'env'
 
 interface CenterTabsProps {
   active: CenterView
@@ -14,6 +14,7 @@ export default function CenterTabs({ active, onChange }: CenterTabsProps) {
     { id: 'tasks',    label: 'Tarefas',  icon: <LayoutList className="w-3.5 h-3.5" /> },
     { id: 'database', label: 'Database', icon: <Database className="w-3.5 h-3.5" /> },
     { id: 'system',   label: 'Sistema',  icon: <Settings2 className="w-3.5 h-3.5" /> },
+    { id: 'env',      label: 'Variáveis .env', icon: <Lock className="w-3.5 h-3.5" /> },
   ]
 
   return (
@@ -31,3 +32,4 @@ export default function CenterTabs({ active, onChange }: CenterTabsProps) {
     </div>
   )
 }
+

@@ -18,6 +18,7 @@ import SaveVersionModal from './components/SaveVersionModal'
 import KanbanBoard from './components/tasks/KanbanBoard'
 import DatabasePanel from './components/database'
 import SystemPanel from './components/system'
+import EnvPanel from './components/env'
 import DesignPreviewModal from './components/DesignPreviewModal'
 import UserModal from './components/UserModal'
 import { generateCssFileContent } from '../studio/utils/cssParser'
@@ -927,6 +928,14 @@ export default function DashboardPage({
                 isRunning={isRunning}
                 onStopApp={() => { if (isRunning) handleToggleRun() }}
               />
+            </div>
+
+            {/* View de Variáveis .env */}
+            <div
+              className="flex-1 flex flex-col min-h-0"
+              style={{ display: centerView === 'env' ? 'flex' : 'none' }}
+            >
+              <EnvPanel projectPath={project.path} />
             </div>
           </div>
           <RunnerLogsPanel isRunning={isRunning} projectPath={project.path} />

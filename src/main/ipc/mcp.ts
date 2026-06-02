@@ -19,7 +19,9 @@ const DEFAULT_MCP_STATE: Record<string, McpStateInfo> = {
   'shadcn': { enabled: true },
   'IluminMCP': { enabled: false },
   'context7': { enabled: false },
-  'offerspro': { enabled: false }
+  'offerspro': { enabled: false },
+  'stripe': { enabled: false, apiKey: '<stripe_secret_key>' },
+  'asaas': { enabled: false }
 }
 
 export function loadMcpState(): Record<string, McpStateInfo> {
@@ -71,7 +73,10 @@ function getBuiltinNikaMcp(projectPath: string) {
   return {
     command: 'node',
     args: [scriptPath],
-    env: { PROJECT_PATH: projectPath }
+    env: { 
+      PROJECT_PATH: projectPath,
+      USER_DATA_PATH: app.getPath('userData')
+    }
   }
 }
 
@@ -86,7 +91,17 @@ export function syncMcpStateToProject(projectPath: string, mcpState: Record<stri
     'shadcn': () => ({ command: 'npx', args: ['shadcn@latest', 'mcp'] }),
     'IluminMCP': (key) => ({ command: 'npx', args: ['-y', 'ilumin-mcp', '--x-api-key', key || '<api_key>'] }),
     'context7': (key) => ({ command: 'npx', args: ['-y', '@upstash/context7-mcp', '--api-key', key || '<api_key>'] }),
-    'offerspro': (key) => ({ command: 'npx', args: ['-y', 'offerspro-mcp', '--api-key', key || '<api_key>'] })
+    'offerspro': (key) => ({ command: 'npx', args: ['-y', 'offerspro-mcp', '--api-key', key || '<api_key>'] }),
+    'stripe': (key) => ({
+      command: 'npx',
+      args: ['-y', '@stripe/mcp@latest'],
+      env: {
+        STRIPE_SECRET_KEY: key || '<stripe_secret_key>'
+      }
+    }),
+    'asaas': () => ({
+      url: 'https://docs.asaas.com/mcp'
+    })
   }
 
   for (const [mcpId, info] of Object.entries(mcpState)) {

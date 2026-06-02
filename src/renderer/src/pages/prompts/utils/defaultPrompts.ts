@@ -50,5 +50,35 @@ export const DEFAULT_PROMPTS: PromptTemplate[] = [
     gradient: 'from-amber-600/20 to-amber-500/5',
     iconBg: 'bg-amber-500/15 border-amber-500/25',
     tags: ['mock', 'frontend', 'layout', 'teste']
+  },
+  {
+    id: 'refatoracao-projeto',
+    name: 'Refatoração Estrutural (Mais de 300 linhas)',
+    description: 'Refatora arquivos grandes do projeto quebrando-os em múltiplos arquivos menores.',
+    content: 'Analise a estrutura do projeto e identifique qualquer arquivo de código que possua mais de 300 linhas de código (por exemplo, um index.tsx ou routes.py com 1000 linhas). Realize uma refatoração limpa quebrando esse arquivo em múltiplos arquivos menores e mais focados, e importe-os no arquivo original (index) para manter a funcionalidade original intacta.',
+    isDefault: true,
+    gradient: 'from-rose-600/20 to-rose-500/5',
+    iconBg: 'bg-rose-500/15 border-rose-500/25',
+    tags: ['refatoração', 'limpeza', 'arquitetura']
+  },
+  {
+    id: 'raio-x-projeto',
+    name: 'Raio-X do Projeto',
+    description: 'Analisa a estrutura geral do frontend e do backend de uma determinada parte do projeto.',
+    content: 'Realize uma análise profunda (Raio-X) de toda a estrutura e fluxos relacionados a {{Qual parte do projeto analisar, ex: login, pagamentos, tarefas}}. Investigue tanto o frontend (arquivos React, hooks, components) quanto o backend (FastAPI, schemas Pydantic, banco de dados, Docker). Explique como a lógica e a comunicação frontend-backend estão estruturadas nessa funcionalidade.',
+    isDefault: true,
+    gradient: 'from-violet-600/20 to-violet-500/5',
+    iconBg: 'bg-violet-500/15 border-violet-500/25',
+    tags: ['raio-x', 'análise', 'documentação', 'fullstack']
+  },
+  {
+    id: 'correcao-erros',
+    name: 'Correção de Erros (Debugging)',
+    description: 'Localiza e corrige bugs e comportamentos incorretos em uma funcionalidade específica.',
+    content: 'Estou enfrentando um erro ou comportamento inesperado na seguinte funcionalidade: {{Funcionalidade e descrição do erro}}. Realize um processo completo de debugging no projeto, analisando tanto o frontend quanto o backend, para identificar a causa raiz e corrigir o problema mantendo o código limpo.',
+    isDefault: true,
+    gradient: 'from-emerald-600/20 to-emerald-500/5',
+    iconBg: 'bg-emerald-500/15 border-emerald-500/25',
+    tags: ['debugging', 'bugs', 'correção', 'erros']
   }
 ]

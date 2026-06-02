@@ -64,5 +64,60 @@ export const TOOLS = [
       type: 'object',
       properties: {}
     }
+  },
+  {
+    name: 'create_prompt',
+    description: 'Cria um novo template de prompt no Nika IDE. DICA: Utilize variáveis no formato {{Nome da Variavel}} no conteúdo para que o usuário as preencha de forma visual ao usar o prompt.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Nome legível do prompt (ex: "Criar Controller NestJS")' },
+        description: { type: 'string', description: 'O que esse prompt faz e quando usá-lo' },
+        content: { type: 'string', description: 'Conteúdo do prompt. Pode conter variáveis como {{Digite seu nome}}' },
+        tags: { type: 'array', items: { type: 'string' }, description: 'Tags para categorização do prompt' }
+      },
+      required: ['name', 'description', 'content']
+    }
+  },
+  {
+    name: 'create_agent',
+    description: 'Cria um novo Agente (System Instructions personalizadas) no Nika IDE para guiar a IA no desenvolvimento.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Nome do agente (ex: "Especialista Stripe")' },
+        description: { type: 'string', description: 'Descrição da especialidade do agente' },
+        systemInstructions: { type: 'string', description: 'As instruções de sistema detalhadas' },
+        tags: { type: 'array', items: { type: 'string' }, description: 'Tags associadas ao agente' }
+      },
+      required: ['name', 'description', 'systemInstructions']
+    }
+  },
+  {
+    name: 'create_mcp',
+    description: 'Cria ou atualiza um servidor MCP customizado no Nika IDE.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'ID único do servidor MCP em minúsculo e sem espaços (ex: "stripe")' },
+        name: { type: 'string', description: 'Nome visível do servidor MCP' },
+        configText: { type: 'string', description: 'A configuração JSON do servidor contendo o command/args ou url' },
+        enabled: { type: 'boolean', description: 'Se o MCP deve ser ativado imediatamente' }
+      },
+      required: ['id', 'name', 'configText']
+    }
+  },
+  {
+    name: 'create_skill',
+    description: 'Cria uma nova Skill (conjunto de diretrizes e boas práticas em Markdown) no projeto ativo e nos templates globais.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'ID/Nome da skill em minúsculo com hífen (ex: "auth-jwt", "payment-stripe")' },
+        description: { type: 'string', description: 'Descrição detalhada de quando a IA deve ativar essa skill' },
+        content: { type: 'string', description: 'O conteúdo em Markdown contendo as diretrizes, exemplos de código e gotchas' }
+      },
+      required: ['name', 'description', 'content']
+    }
   }
 ]

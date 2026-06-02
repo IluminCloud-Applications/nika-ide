@@ -123,5 +123,29 @@ export const DEFAULT_MCPS: McpServer[] = [
     requiresAuth: false,
     gradient: 'from-amber-600/20 to-amber-500/5',
     iconBg: 'bg-amber-500/15 border-amber-500/25'
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    tagline: 'MCP oficial da Stripe',
+    description: 'Integração para gerenciar pagamentos, assinaturas, clientes e faturas da Stripe em tempo real.',
+    category: 'cloud',
+    tags: ['pagamentos', 'stripe', 'financeiro'],
+    enabled: false,
+    requiresAuth: true,
+    gradient: 'from-purple-600/20 to-purple-500/5',
+    iconBg: 'bg-purple-500/15 border-purple-500/25'
+  },
+  {
+    id: 'asaas',
+    name: 'Asaas',
+    tagline: 'MCP para documentação da Asaas',
+    description: 'Fornece documentação e referências da Asaas API para auxiliar no desenvolvimento de integrações de pagamento brasileiras.',
+    category: 'cloud',
+    tags: ['pagamentos', 'asaas', 'documentacao'],
+    enabled: false,
+    requiresAuth: false,
+    gradient: 'from-blue-600/20 to-blue-500/5',
+    iconBg: 'bg-blue-500/15 border-blue-500/25'
   }
 ]

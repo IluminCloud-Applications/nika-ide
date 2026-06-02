@@ -11,6 +11,7 @@ import { callBridge, checkUrlOnline, checkUrlOffline } from './utils'
 import { gitCommit } from './git-helper'
 import { sqlExecute } from './db-helper'
 import { checkApp } from './checker'
+import { createPrompt, createAgent, createMcp, createSkill } from './creator'
 
 export class NikaMCPServer {
   private server: Server
@@ -144,6 +145,26 @@ export class NikaMCPServer {
               text: result
             }]
           }
+        }
+
+        if (name === 'create_prompt') {
+          const result = createPrompt(args)
+          return { content: [{ type: 'text', text: result }] }
+        }
+
+        if (name === 'create_agent') {
+          const result = createAgent(args)
+          return { content: [{ type: 'text', text: result }] }
+        }
+
+        if (name === 'create_mcp') {
+          const result = createMcp(args, this.projectPath)
+          return { content: [{ type: 'text', text: result }] }
+        }
+
+        if (name === 'create_skill') {
+          const result = createSkill(args, this.projectPath)
+          return { content: [{ type: 'text', text: result }] }
         }
 
         throw new Error(`Método do MCP desconhecido: ${name}`)
