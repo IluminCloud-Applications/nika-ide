@@ -44,6 +44,9 @@ export default function NotepadView({
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
       localStorage.setItem(getStorageKey(projectPath, noteId), value)
+      window.api.settings.set({
+        [getStorageKey(projectPath, noteId)]: value
+      }).catch(console.error)
     }, 300)
   }, [projectPath, noteId])
 

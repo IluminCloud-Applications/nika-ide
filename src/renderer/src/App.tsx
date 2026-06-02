@@ -34,6 +34,7 @@ export interface Project {
 }
 
 export default function App() {
+  const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'welcome' | 'main' | 'dashboard' | 'studio'>('main')
   const [mainRoute, setMainRoute] = useState<NavRoute>('projects')
   const [currentProject, setCurrentProject] = useState<Project | null>(null)
@@ -50,27 +51,49 @@ export default function App() {
     setTheme(prev => {
       const next = THEMES[(THEMES.indexOf(prev) + 1) % THEMES.length]
       localStorage.setItem('app_theme', next)
+      window.api.settings.set({ app_theme: next }).catch(console.error)
       return next
     })
   }
 
   useEffect(() => {
     window.api.settings.get().then((s) => {
+      if (s) {
+        Object.entries(s).forEach(([key, val]) => {
+          if (typeof val === 'string') {
+            localStorage.setItem(key, val)
+          } else {
+            localStorage.setItem(key, JSON.stringify(val))
+          }
+        })
+      }
+
+      const savedTheme = localStorage.getItem('app_theme') as Theme
+      if (savedTheme && THEMES.includes(savedTheme)) {
+        setTheme(savedTheme)
+      }
+
       const tutorialDone = localStorage.getItem('tutorial_done')
       if (!tutorialDone && !s.workspacePath) {
         setView('welcome')
       } else {
-        if (s.workspacePath) localStorage.setItem('tutorial_done', 'true')
+        if (s.workspacePath) {
+          localStorage.setItem('tutorial_done', 'true')
+          window.api.settings.set({ tutorial_done: 'true' }).catch(console.error)
+        }
         setView('main')
       }
+      setLoading(false)
     }).catch(() => {
       const tutorialDone = localStorage.getItem('tutorial_done')
       setView(tutorialDone ? 'main' : 'welcome')
+      setLoading(false)
     })
   }, [])
 
   const handleTutorialComplete = () => {
     localStorage.setItem('tutorial_done', 'true')
+    window.api.settings.set({ tutorial_done: 'true' }).catch(console.error)
     setView('main')
   }
 
@@ -134,6 +157,10 @@ export default function App() {
     } catch (err) {
       console.error('Erro ao reabrir projeto do widget flutuante:', err)
     }
+  }
+
+  if (loading) {
+    return <div className="h-screen w-screen bg-[#09090b]" />
   }
 
   return (

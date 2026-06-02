@@ -47,6 +47,7 @@ export default function TerminalDrawer({
 
   useEffect(() => {
     localStorage.setItem('terminal_drawer_width', width.toString())
+    window.api.settings.set({ terminal_drawer_width: width.toString() }).catch(console.error)
   }, [width])
 
   const activeTab      = tabs.find(t => t.id === activeTabId)

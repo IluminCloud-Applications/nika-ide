@@ -46,7 +46,7 @@ function saveArchivedProjects(projects: any[]) {
   fs.writeFileSync(dbPath, JSON.stringify(projects, null, 2), 'utf-8')
 }
 
-function loadSettings(): { workspacePath?: string } {
+function loadSettings(): Record<string, any> {
   const p = getSettingsPath()
   if (!fs.existsSync(p)) return {}
   try { return JSON.parse(fs.readFileSync(p, 'utf-8')) } catch { return {} }
@@ -148,7 +148,16 @@ export function registerProjectHandlers() {
   ipcMain.handle('settings:get', () => loadSettings())
 
   ipcMain.handle('settings:set', (_, settings: any) => {
-    saveSettings(settings)
+    const current = loadSettings()
+    const updated = { ...current }
+    for (const [key, value] of Object.entries(settings)) {
+      if (value === null || value === undefined) {
+        delete updated[key]
+      } else {
+        updated[key] = value
+      }
+    }
+    saveSettings(updated)
     return { success: true }
   })
 

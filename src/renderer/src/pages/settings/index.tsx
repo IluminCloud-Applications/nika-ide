@@ -49,6 +49,7 @@ export default function SettingsPage({ theme, setTheme }: SettingsPageProps) {
   const handleThemeChange = (newTheme: Theme) => {
     setTheme(newTheme)
     localStorage.setItem('app_theme', newTheme)
+    window.api.settings.set({ app_theme: newTheme }).catch(console.error)
   }
 
   return (

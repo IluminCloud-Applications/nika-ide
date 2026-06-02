@@ -64,6 +64,19 @@ interface TerminalProviderProps {
   reopenProject?: (projectPath: string, activeTabId?: string) => void
 }
 
+function getLoadedState(projectPath: string, prev: Record<string, ProjectState>): ProjectState {
+  if (prev[projectPath]) return prev[projectPath]
+  let tabs: Tab[] = []
+  let activeTabId = ''
+  try {
+    const savedTabs = localStorage.getItem(`terminal_drawer_tabs:${projectPath}`)
+    const savedActive = localStorage.getItem(`terminal_drawer_active_tab:${projectPath}`)
+    if (savedTabs) tabs = JSON.parse(savedTabs).map((t: Tab) => ({ ...t, terminalId: null, connected: false }))
+    if (savedActive) activeTabId = savedActive
+  } catch {}
+  return { tabs, activeTabId }
+}
+
 export function TerminalProvider({ children, reopenProject }: TerminalProviderProps) {
   const sessionsRef = useRef<Record<string, GlobalSession>>({})
   const [renderTick, setRenderTick] = useState(0)
@@ -81,19 +94,7 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
   }, [])
 
   const getProjectState = useCallback((projectPath: string): ProjectState => {
-    let baseState = projectStates[projectPath]
-    if (!baseState) {
-      let tabs: Tab[] = []
-      let activeTabId = ''
-      try {
-        const savedTabs = localStorage.getItem(`terminal_drawer_tabs:${projectPath}`)
-        const savedActive = localStorage.getItem(`terminal_drawer_active_tab:${projectPath}`)
-        if (savedTabs) tabs = JSON.parse(savedTabs).map((t: Tab) => ({ ...t, terminalId: null, connected: false }))
-        if (savedActive) activeTabId = savedActive
-      } catch {}
-      baseState = { tabs, activeTabId }
-    }
-
+    const baseState = getLoadedState(projectPath, projectStates)
     const sessions = getSessionsForProject(projectPath)
     const reconciledTabs = baseState.tabs.map(tab => {
       const live = sessions[tab.id]
@@ -110,11 +111,15 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
     const toSave = tabs.map(t => ({ ...t, terminalId: null, connected: false }))
     localStorage.setItem(`terminal_drawer_tabs:${projectPath}`, JSON.stringify(toSave))
     localStorage.setItem(`terminal_drawer_active_tab:${projectPath}`, activeTabId)
+    window.api.settings.set({
+      [`terminal_drawer_tabs:${projectPath}`]: toSave,
+      [`terminal_drawer_active_tab:${projectPath}`]: activeTabId
+    }).catch(console.error)
   }
 
   const addProjectTab = useCallback((projectPath: string, type: 'terminal' | 'note', opts?: { name?: string; initialCommand?: string }) => {
     setProjectStates(prev => {
-      const curr = prev[projectPath] || { tabs: [], activeTabId: '' }
+      const curr = getLoadedState(projectPath, prev)
       const count = curr.tabs.filter(t => t.type === type).length + 1
       const defaultName = type === 'terminal' ? `Terminal ${count}` : `Nota ${count}`
       const newTab: Tab = {
@@ -143,14 +148,18 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
 
   const removeProjectTab = useCallback((projectPath: string, tabId: string) => {
     setProjectStates(prev => {
-      const curr = prev[projectPath]
-      if (!curr) return prev
+      const curr = getLoadedState(projectPath, prev)
       const tab = curr.tabs.find(t => t.id === tabId)
       if (tab?.type === 'terminal') {
         if (tab.terminalId) killTerminal(tab.terminalId)
         terminalStore.destroy(tabId)
       }
-      if (tab?.type === 'note') localStorage.removeItem(`note:${projectPath}:${tabId}`)
+      if (tab?.type === 'note') {
+        localStorage.removeItem(`note:${projectPath}:${tabId}`)
+        window.api.settings.set({
+          [`note:${projectPath}:${tabId}`]: null
+        }).catch(console.error)
+      }
       const remaining = curr.tabs.filter(t => t.id !== tabId)
       const nextActiveId = curr.activeTabId === tabId ? (remaining.length > 0 ? remaining[0].id : '') : curr.activeTabId
       saveToStorage(projectPath, remaining, nextActiveId)
@@ -160,8 +169,7 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
 
   const renameProjectTab = useCallback((projectPath: string, tabId: string, name: string) => {
     setProjectStates(prev => {
-      const curr = prev[projectPath]
-      if (!curr) return prev
+      const curr = getLoadedState(projectPath, prev)
       const updated = curr.tabs.map(t => t.id === tabId ? { ...t, name } : t)
       saveToStorage(projectPath, updated, curr.activeTabId)
       return { ...prev, [projectPath]: { ...curr, tabs: updated } }
@@ -170,8 +178,7 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
 
   const reorderProjectTabs = useCallback((projectPath: string, startIndex: number, endIndex: number) => {
     setProjectStates(prev => {
-      const curr = prev[projectPath]
-      if (!curr) return prev
+      const curr = getLoadedState(projectPath, prev)
       const result = Array.from(curr.tabs)
       const [removed] = result.splice(startIndex, 1)
       result.splice(endIndex, 0, removed)
@@ -182,9 +189,11 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
 
   const setProjectActiveTabId = useCallback((projectPath: string, activeTabId: string) => {
     setProjectStates(prev => {
-      const curr = prev[projectPath]
-      if (!curr) return prev
+      const curr = getLoadedState(projectPath, prev)
       localStorage.setItem(`terminal_drawer_active_tab:${projectPath}`, activeTabId)
+      window.api.settings.set({
+        [`terminal_drawer_active_tab:${projectPath}`]: activeTabId
+      }).catch(console.error)
       return { ...prev, [projectPath]: { ...curr, activeTabId } }
     })
   }, [])
