@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Copy, Send, Check, ChevronDown, Coins } from 'lucide-react'
 import { Tab } from './TerminalTabs'
 import { estimateTokens, formatNumber } from '@/utils/textStats'
+import { pasteToTerminal } from './terminalStore'
 
 interface NotepadViewProps {
   noteId: string
@@ -60,14 +61,22 @@ export default function NotepadView({
   }
 
   const handleSendToTerminal = (terminalId: string) => {
-    if (content.trim()) {
-      const targetTab = terminalTabs.find(t => t.terminalId === terminalId)
+    if (!content.trim()) return
+    const targetTab = terminalTabs.find(t => t.terminalId === terminalId)
+    setShowTerminalPicker(false)
+
+    // 1. Switch to the terminal tab
+    if (targetTab) onSelectTab(targetTab.id)
+
+    // 2. Wait for React to mount/attach the terminal, then paste
+    setTimeout(() => {
       if (targetTab) {
-        onSelectTab(targetTab.id)
+        const pasted = pasteToTerminal(targetTab.id, content)
+        if (pasted) return
       }
+      // Fallback: write directly via PTY if paste failed
       onSendToTerminal(terminalId, content)
-      setShowTerminalPicker(false)
-    }
+    }, 200)
   }
 
   const availableTerminals = terminalTabs.filter(t => t.type === 'terminal' && t.terminalId)

@@ -143,6 +143,15 @@ export function destroy(tabId: string): void {
   instances.delete(tabId)
 }
 
+/** Paste text into a terminal instance and focus it. */
+export function pasteToTerminal(tabId: string, text: string): boolean {
+  const inst = instances.get(tabId)
+  if (!inst || inst.exited) return false
+  inst.term.paste(text)
+  inst.term.focus()
+  return true
+}
+
 /** Destroy all stored instances (app teardown). */
 export function destroyAll(): void {
   for (const tabId of instances.keys()) {
