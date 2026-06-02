@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, Palette, User } from 'lucide-react'
+import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, Palette, User, Lock } from 'lucide-react'
 import { Project } from '../../App'
 
 import FileExplorer from './components/FileExplorer'
@@ -18,7 +18,6 @@ import SaveVersionModal from './components/SaveVersionModal'
 import KanbanBoard from './components/tasks/KanbanBoard'
 import DatabasePanel from './components/database'
 import SystemPanel from './components/system'
-import EnvPanel from './components/env'
 import DesignPreviewModal from './components/DesignPreviewModal'
 import UserModal from './components/UserModal'
 import { generateCssFileContent } from '../studio/utils/cssParser'
@@ -26,6 +25,7 @@ import { DesignPalette } from '../studio/utils/defaultDesigns'
 import IconPickerModal from './components/IconPickerModal'
 import { useTerminalContext } from '../../context/TerminalContext'
 import ProjectTabs from './components/ProjectTabs'
+import EnvDrawer from './components/EnvDrawer'
 
 export default function DashboardPage({
   project,
@@ -50,6 +50,7 @@ export default function DashboardPage({
   const [activeAgent, setActiveAgent]         = useState<Agent>(DEFAULT_AGENTS[0])
   const [userModalOpen, setUserModalOpen]     = useState(false)
   const [designModalOpen, setDesignModalOpen] = useState(false)
+  const [envDrawerOpen, setEnvDrawerOpen]     = useState(false)
 
 
   useEffect(() => {
@@ -629,17 +630,19 @@ export default function DashboardPage({
                 ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
                 : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
             }`}
+            title={isRunning ? 'Parar projeto' : 'Iniciar projeto'}
           >
             {isRunning ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             {isRunning ? 'Parar' : 'Iniciar'}
           </button>
           <button
             onClick={() => setSaveVersionOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-blue-600/10 border border-blue-500/30 text-blue-400 hover:bg-blue-600/20 hover:text-blue-300 transition-all duration-200"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border transition text-[11px] font-medium"
+            style={{ borderColor: 'var(--line)', backgroundColor: 'var(--surface-overlay)', color: 'var(--tx-secondary)' }}
             title="Salvar Versão"
           >
-            <i className="ri-git-commit-line text-xs" />
-            <span>Salvar</span>
+            <i className="ri-git-commit-line text-blue-400 text-xs" />
+            <span className="tx-secondary">Salvar</span>
           </button>
           <div className="divider-y h-5" />
           <AgentSelector
@@ -669,6 +672,14 @@ export default function DashboardPage({
             title="Histórico Git"
           >
             <HistoryIcon className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => setEnvDrawerOpen(!envDrawerOpen)}
+            className={`editor-icon-btn ${envDrawerOpen ? 'active' : ''}`}
+            title="Variáveis de Ambiente"
+          >
+            <Lock className="w-3.5 h-3.5" />
           </button>
 
           <button
@@ -930,16 +941,17 @@ export default function DashboardPage({
               />
             </div>
 
-            {/* View de Variáveis .env */}
-            <div
-              className="flex-1 flex flex-col min-h-0"
-              style={{ display: centerView === 'env' ? 'flex' : 'none' }}
-            >
-              <EnvPanel projectPath={project.path} />
-            </div>
+
           </div>
           <RunnerLogsPanel isRunning={isRunning} projectPath={project.path} />
         </div>
+
+        {/* Env Drawer lateral */}
+        <EnvDrawer
+          isOpen={envDrawerOpen}
+          onClose={() => setEnvDrawerOpen(false)}
+          projectPath={project.path}
+        />
       </div>
 
       <StatusBar projectPath={project.path} isRunning={isRunning} previewUrl={previewUrl} />
