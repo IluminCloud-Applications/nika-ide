@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import useTerminal from './useTerminal'
+import * as store from './terminalStore'
 import { Tab } from './TerminalTabs'
 
 interface TerminalSessionProps {
@@ -7,16 +8,14 @@ interface TerminalSessionProps {
   tab: Tab
   isOpen: boolean
   drawerWidth: number
-  onTerminalCreated: (id: string) => void
-  onTerminalExit: () => void
 }
 
 export default function TerminalSession({
-  projectPath, tab, isOpen, drawerWidth, onTerminalCreated, onTerminalExit
+  projectPath, tab, isOpen, drawerWidth,
 }: TerminalSessionProps) {
   const containerRef = useRef<HTMLDivElement>(null!)
 
-  const { init, destroy, refit, refresh, error } = useTerminal({
+  const { init, refit, error } = useTerminal({
     containerRef,
     isOpen,
     projectPath,
@@ -24,55 +23,36 @@ export default function TerminalSession({
     tabId: tab.id,
     tabName: tab.name,
     initialCommand: tab.initialCommand,
-    onTerminalCreated,
-    onTerminalExit,
   })
 
-  // Initialize on mount or when tab becomes active/open
+  // Attach when visible, detach when hidden or unmounted
   useEffect(() => {
     if (isOpen) {
       init()
-      // Garante que o terminal seja redimensionado e atualizado ao ser reaberto
-      // evitando que fique com tela preta após mudança de visibilidade (display: none -> flex)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(refresh)
-      })
     }
-  }, [isOpen, init, refresh])
+    return () => {
+      // Detach to parking div — instance stays alive
+      store.detach(tab.id)
+    }
+  }, [isOpen, init, tab.id])
 
-  // ResizeObserver: usa refit (debounced 30ms) para evitar spam durante drag
+  // ResizeObserver for container size changes
   useEffect(() => {
     if (!isOpen || !containerRef.current) return
-
-    const observer = new ResizeObserver(() => {
-      refit()
-    })
-
+    const observer = new ResizeObserver(() => refit())
     observer.observe(containerRef.current)
-
-    return () => {
-      observer.disconnect()
-    }
+    return () => observer.disconnect()
   }, [isOpen, refit])
 
-  // Quando o drawer muda de largura via drag da sidebar, aguarda o CSS estabilizar
-  // com duplo requestAnimationFrame antes de refitar
+  // Refit when drawer width changes via drag
   useEffect(() => {
     if (!isOpen) return
-    // Dois rAF garantem que o layout CSS já calculou as dimensões finais
-    requestAnimationFrame(() => {
-      requestAnimationFrame(refresh)
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drawerWidth])
+    store.fitSync(tab.id)
+    setTimeout(() => store.fitSync(tab.id), 50)
+  }, [drawerWidth, isOpen, tab.id])
 
-
-  // Clean up terminal on unmount (e.g. tab closed or project switched)
-  useEffect(() => {
-    return () => {
-      destroy()
-    }
-  }, [])
+  // Note: destroy() is NOT called on unmount — instances persist in the store.
+  // Destruction happens only when a tab is explicitly removed (removeProjectTab).
 
   if (error) {
     return (

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
+import * as terminalStore from '../pages/dashboard/components/terminal/terminalStore'
 
 export interface Tab {
   id: string
@@ -145,7 +146,10 @@ export function TerminalProvider({ children, reopenProject }: TerminalProviderPr
       const curr = prev[projectPath]
       if (!curr) return prev
       const tab = curr.tabs.find(t => t.id === tabId)
-      if (tab?.type === 'terminal' && tab.terminalId) killTerminal(tab.terminalId)
+      if (tab?.type === 'terminal') {
+        if (tab.terminalId) killTerminal(tab.terminalId)
+        terminalStore.destroy(tabId)
+      }
       if (tab?.type === 'note') localStorage.removeItem(`note:${projectPath}:${tabId}`)
       const remaining = curr.tabs.filter(t => t.id !== tabId)
       const nextActiveId = curr.activeTabId === tabId ? (remaining.length > 0 ? remaining[0].id : '') : curr.activeTabId

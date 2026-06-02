@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { parseEnvContent, serializeEnvEntries, EnvEntry } from './utils'
 import EnvTable from './EnvTable'
 

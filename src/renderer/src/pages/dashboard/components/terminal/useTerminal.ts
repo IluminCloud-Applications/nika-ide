@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Terminal as XTerm } from 'xterm'
-import { FitAddon } from 'xterm-addon-fit'
 import { useTerminalContext } from '../../../../context/TerminalContext'
+import * as store from './terminalStore'
 
 interface UseTerminalProps {
   containerRef: React.RefObject<HTMLDivElement>
@@ -11,8 +10,6 @@ interface UseTerminalProps {
   tabId: string
   tabName: string
   initialCommand?: string
-  onTerminalCreated: (id: string) => void
-  onTerminalExit: () => void
 }
 
 // Track which terminalIds have already received their initialCommand
@@ -20,37 +17,27 @@ const sentInitialCommands = new Set<string>()
 
 export default function useTerminal({
   containerRef, isOpen, projectPath, terminalId, tabId, tabName, initialCommand,
-  onTerminalCreated, onTerminalExit
 }: UseTerminalProps) {
-  const { registerTerminal, subscribe, writeTerminal, resizeTerminal } = useTerminalContext()
-  const xtermRef      = useRef<XTerm | null>(null)
-  const fitRef        = useRef<FitAddon | null>(null)
-  const termIdRef     = useRef<string | null>(null)
-  const cleanupRef    = useRef<(() => void) | null>(null)
-  const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { registerTerminal, writeTerminal } = useTerminalContext()
   const [error, setError] = useState<string | null>(null)
+  const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const destroy = useCallback(() => {
-    cleanupRef.current?.()
-    cleanupRef.current = null
-    xtermRef.current?.dispose()
-    xtermRef.current = null
-    fitRef.current = null
-  }, [])
-
+  /** Create PTY + xterm instance (if needed), then attach to container. */
   const init = useCallback(async () => {
     if (!containerRef.current || !isOpen) return
-    if (xtermRef.current) return
     setError(null)
 
     try {
-      // Ensure the container is visible and has physical dimensions before initializing xterm.
+      // If instance already exists, just re-attach it to the (possibly new) container
+      if (store.has(tabId)) {
+        store.attach(tabId, containerRef.current)
+        return
+      }
+
+      // Wait for container to have physical dimensions before first create
       await new Promise<void>((resolve, reject) => {
         const check = () => {
-          if (!isOpen) {
-            reject(new Error('Terminal initialization cancelled'))
-            return
-          }
+          if (!isOpen) { reject(new Error('cancelled')); return }
           if (containerRef.current && containerRef.current.clientWidth > 0) {
             resolve()
           } else {
@@ -60,106 +47,59 @@ export default function useTerminal({
         check()
       })
 
+      // Don't create twice (another init() call might have resolved while we waited)
+      if (store.has(tabId)) {
+        store.attach(tabId, containerRef.current)
+        return
+      }
+
+      // Create PTY
       let termId = terminalId
       const isNewTerminal = !termId
       const projectName = projectPath.split(/[/\\]/).pop() || 'Projeto'
 
       if (!termId) {
         termId = await window.api.terminal.create(projectPath)
-        registerTerminal(termId, projectPath, projectName, tabId, tabName)
-        onTerminalCreated(termId)
-      } else {
-        registerTerminal(termId, projectPath, projectName, tabId, tabName)
       }
+      registerTerminal(termId, projectPath, projectName, tabId, tabName)
 
-      termIdRef.current = termId
+      // Create xterm instance in the store (wires PTY data automatically)
+      store.create(tabId, termId)
 
-      const term = new XTerm({
-        theme: { background: '#09090b', foreground: '#e4e4e7', cursor: '#3b82f6', selectionBackground: '#3b82f644' },
-        cursorBlink: true,
-        fontFamily: "'Fira Code', 'JetBrains Mono', monospace",
-        fontSize: 12,
-        lineHeight: 1.3,
-        scrollback: 5000,
-      })
+      // Attach to visible container
+      store.attach(tabId, containerRef.current)
 
-      const fit = new FitAddon()
-      term.loadAddon(fit)
-      term.open(containerRef.current)
-
-      requestAnimationFrame(() => {
-        try {
-          fit.fit()
-          resizeTerminal(termId!, term.cols, term.rows)
-        } catch {}
-      })
-
-      // Subscribe to global context terminal streams
-      const unsubscribe = subscribe(
-        termId!,
-        (data: string) => term.write(data),
-        () => {
-          term.write('\n\r\x1b[90m[Sessão terminada]\x1b[0m')
-          onTerminalExit()
-        }
-      )
-
-      term.onData(data => writeTerminal(termId!, data))
-      term.onResize(({ cols, rows }) => resizeTerminal(termId!, cols, rows))
-
-      xtermRef.current   = term
-      fitRef.current     = fit
-      cleanupRef.current = () => { unsubscribe() }
-
-      // Only send initialCommand once — on the very first time this terminal is created
-      if (initialCommand && isNewTerminal && !sentInitialCommands.has(termId!)) {
-        sentInitialCommands.add(termId!)
-        setTimeout(() => {
-          writeTerminal(termId!, initialCommand)
-        }, 600)
+      // Send initial command once per terminal
+      if (initialCommand && isNewTerminal && !sentInitialCommands.has(termId)) {
+        sentInitialCommands.add(termId)
+        setTimeout(() => writeTerminal(termId!, initialCommand), 600)
       }
     } catch (err) {
-      if ((err as Error).message === 'Terminal initialization cancelled') return
+      if ((err as Error).message === 'cancelled') return
       console.error('Failed to init terminal:', err)
       setError((err as Error).message || 'Erro ao iniciar terminal')
     }
-  }, [isOpen, projectPath, terminalId, tabId, tabName, destroy, onTerminalCreated, onTerminalExit, registerTerminal, subscribe, writeTerminal, resizeTerminal])
+  }, [isOpen, projectPath, terminalId, tabId, tabName, initialCommand, registerTerminal, writeTerminal, containerRef])
 
-  // Internal helper: fit + sync PTY size + repaint
-  const fitAndSync = useCallback(() => {
-    const term  = xtermRef.current
-    const fit   = fitRef.current
-    const tId   = termIdRef.current
-    if (!term || !fit) return
-    try {
-      fit.fit()
-      if (tId) {
-        resizeTerminal(tId, term.cols, term.rows)
-      }
-      term.scrollToBottom()
-      term.refresh(0, term.rows - 1)
-    } catch {}
-  }, [resizeTerminal])
+  /** Destroy xterm instance permanently (when tab is closed). */
+  const destroy = useCallback(() => {
+    store.destroy(tabId)
+  }, [tabId])
 
-  // Debounced refit — called during continuous sidebar drag to avoid spam
+  /** Debounced fit — safe during drag resize. */
   const refit = useCallback(() => {
     if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current)
     resizeTimerRef.current = setTimeout(() => {
-      requestAnimationFrame(fitAndSync)
+      requestAnimationFrame(() => store.fitSync(tabId))
     }, 30)
-  }, [fitAndSync])
+  }, [tabId])
 
-  // Refresh terminal viewport
-  const refresh = useCallback(() => {
-    requestAnimationFrame(fitAndSync)
-  }, [fitAndSync])
-
-  // Cancel pending debounce on unmount
+  // Cancel pending timers on unmount
   useEffect(() => {
     return () => {
       if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current)
     }
   }, [])
 
-  return { init, destroy, refit, refresh, error }
+  return { init, destroy, refit, error }
 }

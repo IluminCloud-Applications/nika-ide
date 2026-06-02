@@ -115,4 +115,7 @@ export default defineConfig({
   server: {
     port: 3333,
   },
+  optimizeDeps: {
+    exclude: ['@xterm/xterm'],
+  },
 })

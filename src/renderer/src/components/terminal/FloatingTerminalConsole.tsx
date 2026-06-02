@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { Terminal as XTerm } from 'xterm'
-import { FitAddon } from 'xterm-addon-fit'
+import { Terminal as XTerm } from '@xterm/xterm'
+import { FitAddon } from '@xterm/addon-fit'
 import { useTerminalContext } from '../../context/TerminalContext'
-import 'xterm/css/xterm.css'
+import '@xterm/xterm/css/xterm.css'
 
 interface FloatingTerminalConsoleProps {
   terminalId: string

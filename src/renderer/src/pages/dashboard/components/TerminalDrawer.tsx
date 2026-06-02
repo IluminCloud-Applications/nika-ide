@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Terminal as TermIcon, X, ExternalLink } from 'lucide-react'
-import 'xterm/css/xterm.css'
+import '@xterm/xterm/css/xterm.css'
 import DrawerTabs from './terminal/TerminalTabs'
 import NotepadView from './terminal/NotepadView'
 import ResizeHandle from './terminal/ResizeHandle'
@@ -182,8 +182,6 @@ export default function TerminalDrawer({
                     tab={t}
                     isOpen={isOpen && isActive}
                     drawerWidth={width}
-                    onTerminalCreated={() => {}}
-                    onTerminalExit={() => {}}
                   />
                 </div>
               )
