@@ -70,5 +70,32 @@ export const TOOLS = [
       },
       required: ['project_path', 'title', 'description']
     }
+  },
+  {
+    name: 'add_idea',
+    description: [
+      'Cria uma nova ideia (sugestão ou hipótese de feature) na coluna de Ideias do Kanban do projeto.',
+      'O título e a descrição da ideia devem ser informados.',
+      'O usuário poderá revisar e aprovar esta ideia arrastando-a para a coluna Pendente manualmente.'
+    ].join(' '),
+    inputSchema: {
+      type: 'object',
+      properties: {
+        project_path: {
+          type: 'string',
+          description: 'Caminho absoluto do projeto. Obrigatório.'
+        },
+        title: {
+          type: 'string',
+          description: 'Título da ideia.'
+        },
+        description: {
+          type: 'string',
+          description: 'Descrição detalhada da ideia, incluindo objetivo, dores que resolve e possível abordagem técnica.'
+        }
+      },
+      required: ['project_path', 'title', 'description']
+    }
   }
 ]
+

@@ -16,11 +16,13 @@ export default function TerminalSession({
 }: TerminalSessionProps) {
   const containerRef = useRef<HTMLDivElement>(null!)
 
-  const { init, destroy, refresh, error } = useTerminal({
+  const { init, destroy, refit, refresh, error } = useTerminal({
     containerRef,
     isOpen,
     projectPath,
     terminalId: tab.terminalId,
+    tabId: tab.id,
+    tabName: tab.name,
     initialCommand: tab.initialCommand,
     onTerminalCreated,
     onTerminalExit,
@@ -33,13 +35,12 @@ export default function TerminalSession({
     }
   }, [isOpen])
 
-  // Observe container size changes using ResizeObserver to refit and refresh the terminal in real-time
+  // ResizeObserver: usa refit (debounced 30ms) para evitar spam durante drag
   useEffect(() => {
     if (!isOpen || !containerRef.current) return
 
     const observer = new ResizeObserver(() => {
-      // Execute the layout update inside a requestAnimationFrame to avoid loop limit errors and keep it smooth
-      requestAnimationFrame(refresh)
+      refit()
     })
 
     observer.observe(containerRef.current)
@@ -47,16 +48,19 @@ export default function TerminalSession({
     return () => {
       observer.disconnect()
     }
-  }, [isOpen, refresh])
+  }, [isOpen, refit])
 
-  // When the drawer width changes externally (sidebar resize), force a refit.
-  // The ResizeObserver on the container handles active terminals, but this
-  // covers edge cases where the observer fires before the layout is fully settled.
+  // Quando o drawer muda de largura via drag da sidebar, aguarda o CSS estabilizar
+  // com duplo requestAnimationFrame antes de refitar
   useEffect(() => {
     if (!isOpen) return
-    refresh()
+    // Dois rAF garantem que o layout CSS já calculou as dimensões finais
+    requestAnimationFrame(() => {
+      requestAnimationFrame(refresh)
+    })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawerWidth])
+
 
   // Clean up terminal on unmount (e.g. tab closed or project switched)
   useEffect(() => {

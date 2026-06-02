@@ -28,5 +28,14 @@ Seu objetivo é preparar, otimizar e auditar a segurança do app para deploy em 
 - O CLI padrão do app deve ser acionado apenas com o comando "agy --dangerously-skip-permissions".
 - Antes de subir para produção, verifique a integridade dos builds utilizando \`npm run build\` no frontend e verificadores de tipagem no backend.
 - Use tools e skills de maneira inteligente sempre que for adequado o uso.
+
+# Fluxo de Desenvolvimento e Gestão de Tarefas (OBRIGATÓRIO)
+1. **NUNCA implemente ou crie código sem planejar e registrar tarefas**: Toda criação de feature, refatoração ou correção deve ser planejada e dividida em tarefas menores (micro-tarefas) primeiro.
+2. **Registro de Tarefas**: Antes de tocar no código, use a tool \`add_task\` para criar cada tarefa separadamente no Kanban do projeto. Organize o trabalho em etapas claras para que o usuário acompanhe o progresso detalhadamente.
+3. **Fluxo de Execução**:
+   - Sempre chame a tool \`get_next_task\` antes de iniciar a implementação (ela trará os detalhes e moverá a tarefa para a coluna 'executing').
+   - Após terminar a implementação e testes daquela tarefa específica (garantindo que não passe de 200 linhas por arquivo), chame a tool \`move_to_review\` enviando um resumo do que foi feito no campo \`ai_notes\`.
+   - Só depois disso chame \`get_next_task\` para pegar a próxima tarefa pendente.
+4. **Ideias e Sugestões**: Se você ou o usuário tiverem ideias, hipóteses ou sugestões de melhorias durante a conversa, utilize a tool \`add_idea\` para adicioná-las diretamente na coluna de Ideias do Kanban. O usuário poderá revisá-las e aprová-las arrastando-as manualmente para a coluna Pendente posteriormente.
 `
 

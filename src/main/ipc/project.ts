@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execSync, spawn, ChildProcess } from 'node:child_process'
 import { loadMcpState, syncMcpStateToProject } from './mcp'
+import { updateProjectInstructions } from './projectInstructions'
 
 const diffPreviews = new Map<string, { proc: ChildProcess; tempPath: string }>()
 
@@ -243,6 +244,9 @@ export function registerProjectHandlers() {
       fs.writeFileSync(path.join(projectPath, 'AGENTS.md'), '# instructions', 'utf-8')
     }
 
+    // Inject project name and description dynamically in instructions files
+    updateProjectInstructions(projectPath, name, description)
+
     // Sync MCP configurations
     try {
       const mcpState = loadMcpState()
@@ -341,11 +345,19 @@ export function registerProjectHandlers() {
     const projects = loadProjects()
     const idx = projects.findIndex((p: any) => p.id === id)
     if (idx === -1) throw new Error('Project not found')
+    
+    const hasNameOrDescUpdate = 'name' in updates || 'description' in updates
+    
     const allowed = ['name', 'description', 'color', 'imagePath', 'imported']
     allowed.forEach(key => {
       if (key in updates) projects[idx][key] = (updates as any)[key]
     })
     saveProjects(projects)
+
+    if (hasNameOrDescUpdate && fs.existsSync(projects[idx].path)) {
+      updateProjectInstructions(projects[idx].path, projects[idx].name, projects[idx].description)
+    }
+
     return projects[idx]
   })
 
@@ -535,9 +547,10 @@ export function registerProjectHandlers() {
 
     // Start Vite on port 5178
     const port = '5178'
+    const isWin = process.platform === 'win32'
     const proc = spawn('npm', ['run', 'dev', '--', '--port', port], {
       cwd: path.join(tempPath, 'frontend'),
-      shell: true,
+      shell: isWin,
       detached: true,
       env: { ...process.env, FORCE_COLOR: '1' }
     })

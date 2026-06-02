@@ -12,6 +12,26 @@ import { registerDatabaseHandlers } from './ipc/database'
 import { registerWebviewDevtools } from './ipc/webview-devtools'
 import { registerDockerHandlers } from './ipc/docker'
 import { startBrowserBridge } from './ipc/browser-bridge'
+
+// Patch stderr to ignore benign Electron/webview navigation errors (abort, refused, etc.)
+const originalStderrWrite = process.stderr.write
+// @ts-ignore
+process.stderr.write = function (chunk: any, encoding?: any, callback?: any): boolean {
+  const str = chunk ? chunk.toString() : ''
+  if (
+    str.includes('GUEST_VIEW_MANAGER_CALL') &&
+    (str.includes('ERR_ABORTED') ||
+      str.includes('ERR_CONNECTION_REFUSED') ||
+      str.includes('ERR_FAILED') ||
+      str.includes('ERR_NAME_NOT_RESOLVED'))
+  ) {
+    const cb = typeof encoding === 'function' ? encoding : callback
+    if (cb) cb()
+    return true
+  }
+  return originalStderrWrite.apply(this, arguments as any)
+}
+
 app.disableHardwareAcceleration()
 app.setName('Nika IDE')
 

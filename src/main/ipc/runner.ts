@@ -18,8 +18,9 @@ function spawnProcess(
   event: Electron.IpcMainInvokeEvent, label: string
 ): ChildProcess {
   // detached: true cria um novo grupo de processos para que possamos matar tudo com -pid
+  const isWin = process.platform === 'win32'
   const proc = spawn(cmd, args, {
-    cwd, shell: true, detached: true,
+    cwd, shell: isWin, detached: true,
     env: { ...process.env, FORCE_COLOR: '1' },
   })
   proc.stdout?.on('data', d => sendToWindow(event, 'runner:log', { label, data: d.toString() }))
@@ -115,7 +116,8 @@ export function registerRunnerHandlers() {
       runningProcesses.delete(projectPath)
     }
     freePorts([5177, 5178, 5175, 8742])
-    try { spawn('docker', ['compose', 'down'], { cwd: projectPath, shell: true }) } catch {}
+    const isWin = process.platform === 'win32'
+    try { spawn('docker', ['compose', 'down'], { cwd: projectPath, shell: isWin }) } catch {}
     await wait(500)
     return { success: true }
   })

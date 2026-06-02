@@ -3,7 +3,6 @@ import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, 
 import { Project } from '../../App'
 
 import FileExplorer from './components/FileExplorer'
-import TerminalDrawer from './components/TerminalDrawer'
 import AgentSelector from './components/AgentSelector'
 import StatusBar from './components/StatusBar'
 import PreviewBar, { ViewportMode } from './components/PreviewBar'
@@ -24,15 +23,27 @@ import UserModal from './components/UserModal'
 import { generateCssFileContent } from '../studio/utils/cssParser'
 import { DesignPalette } from '../studio/utils/defaultDesigns'
 import IconPickerModal from './components/IconPickerModal'
+import { useTerminalContext } from '../../context/TerminalContext'
+import ProjectTabs from './components/ProjectTabs'
 
 export default function DashboardPage({
   project,
+  openProjects = [],
+  activeProjectId = null,
+  onSelectProjectTab = () => {},
+  onCloseProjectTab = () => {},
+  onAddProjectTab = () => {},
   onBack
 }: {
   project: Project
+  openProjects?: Project[]
+  activeProjectId?: string | null
+  onSelectProjectTab?: (projectId: string) => void
+  onCloseProjectTab?: (projectId: string) => void
+  onAddProjectTab?: (project: Project) => void
   onBack: () => void
 }) {
-  const [terminalOpen, setTerminalOpen]       = useState(true)
+  const { drawerVisible, setDrawerVisible } = useTerminalContext()
   const [sidebarOpen, setSidebarOpen]         = useState(true)
   const [centerView, setCenterView]           = useState<CenterView>('preview')
   const [activeAgent, setActiveAgent]         = useState<Agent>(DEFAULT_AGENTS[0])
@@ -471,10 +482,13 @@ export default function DashboardPage({
   // Detecta quando o Vite está pronto nos logs
   useEffect(() => {
     if (!isRunning) return
+    let isReady = false
     const unsub = window.api.runner.onLog((payload: { label: string; data: string }) => {
       if (payload.label !== 'frontend') return
+      if (isReady) return
       const text = payload.data
       if (text.includes('ready in') || text.includes('Local:') || text.includes('localhost:')) {
+        isReady = true
         setTimeout(() => setPreviewReady(true), 800)
       }
     })
@@ -549,6 +563,11 @@ export default function DashboardPage({
     webview.addEventListener('did-navigate-in-page', handleNavigate)
 
     return () => {
+      try {
+        if (webview && typeof webview.stop === 'function') {
+          webview.stop()
+        }
+      } catch (err) {}
       webview.removeEventListener('ipc-message', handleIpcMessage)
       webview.removeEventListener('dom-ready', handleDomReady)
       webview.removeEventListener('did-navigate', handleNavigate)
@@ -588,10 +607,13 @@ export default function DashboardPage({
           >
             <i className={sidebarOpen ? 'ri-sidebar-fold-line text-xs' : 'ri-sidebar-unfold-line text-xs'} />
           </button>
-          <div className="flex items-center gap-2 min-w-0 ml-1">
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: project.color }} />
-            <h2 className="font-semibold text-sm tx-primary truncate max-w-[160px]">{project.name}</h2>
-          </div>
+          <ProjectTabs
+            openProjects={openProjects}
+            activeProjectId={activeProjectId}
+            onSelectProjectTab={onSelectProjectTab}
+            onCloseProjectTab={onCloseProjectTab}
+            onAddProjectTab={onAddProjectTab}
+          />
         </div>
 
         <div className="absolute left-1/2 -translate-x-1/2">
@@ -649,8 +671,8 @@ export default function DashboardPage({
           </button>
 
           <button
-            onClick={() => setTerminalOpen(!terminalOpen)}
-            className={`editor-icon-btn ${terminalOpen ? 'active' : ''}`}
+            onClick={() => setDrawerVisible(!drawerVisible)}
+            className={`editor-icon-btn ${drawerVisible ? 'active' : ''}`}
             title="Terminal"
           >
             <TermIcon className="w-3.5 h-3.5" />
@@ -909,8 +931,6 @@ export default function DashboardPage({
           </div>
           <RunnerLogsPanel isRunning={isRunning} projectPath={project.path} />
         </div>
-
-        <TerminalDrawer key={project.path} projectPath={project.path} isOpen={terminalOpen} onClose={() => setTerminalOpen(false)} />
       </div>
 
       <StatusBar projectPath={project.path} isRunning={isRunning} previewUrl={previewUrl} />

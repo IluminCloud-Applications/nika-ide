@@ -1,12 +1,15 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { Terminal as XTerm } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
+import { useTerminalContext } from '../../../../context/TerminalContext'
 
 interface UseTerminalProps {
   containerRef: React.RefObject<HTMLDivElement>
   isOpen: boolean
   projectPath: string
   terminalId: string | null
+  tabId: string
+  tabName: string
   initialCommand?: string
   onTerminalCreated: (id: string) => void
   onTerminalExit: () => void
@@ -16,9 +19,10 @@ interface UseTerminalProps {
 const sentInitialCommands = new Set<string>()
 
 export default function useTerminal({
-  containerRef, isOpen, projectPath, terminalId, initialCommand,
+  containerRef, isOpen, projectPath, terminalId, tabId, tabName, initialCommand,
   onTerminalCreated, onTerminalExit
 }: UseTerminalProps) {
+  const { registerTerminal, subscribe, writeTerminal, resizeTerminal } = useTerminalContext()
   const xtermRef      = useRef<XTerm | null>(null)
   const fitRef        = useRef<FitAddon | null>(null)
   const termIdRef     = useRef<string | null>(null)
@@ -41,8 +45,6 @@ export default function useTerminal({
 
     try {
       // Ensure the container is visible and has physical dimensions before initializing xterm.
-      // This prevents the xterm canvas renderer from measuring character sizes as 0 or NaN,
-      // which permanently breaks resizing for that terminal instance.
       await new Promise<void>((resolve, reject) => {
         const check = () => {
           if (!isOpen) {
@@ -60,10 +62,14 @@ export default function useTerminal({
 
       let termId = terminalId
       const isNewTerminal = !termId
+      const projectName = projectPath.split(/[/\\]/).pop() || 'Projeto'
 
       if (!termId) {
         termId = await window.api.terminal.create(projectPath)
+        registerTerminal(termId, projectPath, projectName, tabId, tabName)
         onTerminalCreated(termId)
+      } else {
+        registerTerminal(termId, projectPath, projectName, tabId, tabName)
       }
 
       termIdRef.current = termId
@@ -84,28 +90,32 @@ export default function useTerminal({
       requestAnimationFrame(() => {
         try {
           fit.fit()
-          window.api.terminal.resize(termId!, term.cols, term.rows)
+          resizeTerminal(termId!, term.cols, term.rows)
         } catch {}
       })
 
-      const cleanupData = window.api.terminal.onData(termId!, (data: string) => term.write(data))
-      const cleanupExit = window.api.terminal.onExit(termId!, () => {
-        term.write('\n\r\x1b[90m[Sessão terminada]\x1b[0m')
-        onTerminalExit()
-      })
+      // Subscribe to global context terminal streams
+      const unsubscribe = subscribe(
+        termId!,
+        (data: string) => term.write(data),
+        () => {
+          term.write('\n\r\x1b[90m[Sessão terminada]\x1b[0m')
+          onTerminalExit()
+        }
+      )
 
-      term.onData(data => window.api.terminal.write(termId!, data))
-      term.onResize(({ cols, rows }) => window.api.terminal.resize(termId!, cols, rows))
+      term.onData(data => writeTerminal(termId!, data))
+      term.onResize(({ cols, rows }) => resizeTerminal(termId!, cols, rows))
 
       xtermRef.current   = term
       fitRef.current     = fit
-      cleanupRef.current = () => { cleanupData(); cleanupExit() }
+      cleanupRef.current = () => { unsubscribe() }
 
       // Only send initialCommand once — on the very first time this terminal is created
       if (initialCommand && isNewTerminal && !sentInitialCommands.has(termId!)) {
         sentInitialCommands.add(termId!)
         setTimeout(() => {
-          window.api.terminal.write(termId!, initialCommand)
+          writeTerminal(termId!, initialCommand)
         }, 600)
       }
     } catch (err) {
@@ -113,7 +123,7 @@ export default function useTerminal({
       console.error('Failed to init terminal:', err)
       setError((err as Error).message || 'Erro ao iniciar terminal')
     }
-  }, [isOpen, projectPath, terminalId, destroy, onTerminalCreated, onTerminalExit])
+  }, [isOpen, projectPath, terminalId, tabId, tabName, destroy, onTerminalCreated, onTerminalExit, registerTerminal, subscribe, writeTerminal, resizeTerminal])
 
   // Internal helper: fit + sync PTY size + repaint
   const fitAndSync = useCallback(() => {
@@ -123,15 +133,13 @@ export default function useTerminal({
     if (!term || !fit) return
     try {
       fit.fit()
-      // Explicitly push the new cols/rows to the PTY process in case the
-      // onResize event from xterm was missed or fired before the layout settled
       if (tId) {
-        window.api.terminal.resize(tId, term.cols, term.rows)
+        resizeTerminal(tId, term.cols, term.rows)
       }
       term.scrollToBottom()
       term.refresh(0, term.rows - 1)
     } catch {}
-  }, [])
+  }, [resizeTerminal])
 
   // Debounced refit — called during continuous sidebar drag to avoid spam
   const refit = useCallback(() => {
@@ -141,9 +149,7 @@ export default function useTerminal({
     }, 30)
   }, [fitAndSync])
 
-  // Refresh terminal viewport — forces xterm to repaint its canvas.
-  // This fixes the blank-screen issue when the drawer is re-opened or
-  // the tab becomes visible again after being hidden.
+  // Refresh terminal viewport
   const refresh = useCallback(() => {
     requestAnimationFrame(fitAndSync)
   }, [fitAndSync])

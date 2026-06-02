@@ -139,6 +139,27 @@ export class TasksMCPServer {
           }
         }
 
+        // ── ADD IDEA ──────────────────────────────────────────────────
+        if (name === 'add_idea') {
+          const projectPath: string = args?.project_path || this.projectPath
+          const title: string = args?.title
+          const description: string = args?.description
+
+          if (!title || !description) {
+            throw new Error('Título e descrição são obrigatórios para criar uma ideia.')
+          }
+
+          initDb(projectPath)
+          const task = addTask(projectPath, title, description, 'ideas')
+
+          return {
+            content: [{
+              type: 'text',
+              text: `✅ Ideia criada com sucesso!\nID: ${task.id}\nTítulo: ${task.title}\nDescrição: ${task.description}\nColuna: ${task.column}`
+            }]
+          }
+        }
+
         throw new Error(`Tool desconhecida: ${name}`)
       } catch (error: any) {
         console.error(`[Tasks MCP] Erro na tool ${request.params.name}:`, error)

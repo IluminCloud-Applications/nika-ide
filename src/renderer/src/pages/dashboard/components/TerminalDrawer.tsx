@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Terminal as TermIcon, X } from 'lucide-react'
+import { Terminal as TermIcon, X, ExternalLink } from 'lucide-react'
 import 'xterm/css/xterm.css'
-import DrawerTabs, { Tab } from './terminal/TerminalTabs'
+import DrawerTabs from './terminal/TerminalTabs'
 import NotepadView from './terminal/NotepadView'
 import ResizeHandle from './terminal/ResizeHandle'
 import TerminalSession from './terminal/TerminalSession'
+import { useTerminalContext } from '../../../context/TerminalContext'
 
 const MIN_WIDTH     = 320
 const MAX_WIDTH     = 800
@@ -14,32 +15,40 @@ interface TerminalDrawerProps {
   projectPath: string
   isOpen: boolean
   onClose: () => void
+  onProjectPathChange?: (path: string) => void
+  isGlobal?: boolean
 }
 
-export default function TerminalDrawer({ projectPath, isOpen, onClose }: TerminalDrawerProps) {
-  const [tabs, setTabs]         = useState<Tab[]>(() => {
-    try {
-      const saved = localStorage.getItem(`terminal_drawer_tabs:${projectPath}`)
-      if (saved) return JSON.parse(saved).map((t: Tab) => ({ ...t, terminalId: null, connected: false }))
-    } catch {}
-    return [{ id: '1', name: 'Terminal 1', type: 'terminal', terminalId: null, connected: false }]
-  })
-  const [activeTabId, setActiveTabId] = useState<string>(() => localStorage.getItem(`terminal_drawer_active_tab:${projectPath}`) || '1')
-  const [width, setWidth]             = useState<number>(() => Number(localStorage.getItem('terminal_drawer_width')) || DEFAULT_WIDTH)
-  // Save drawer tabs and active tab to localStorage on changes
-  useEffect(() => {
-    const toSave = tabs.map(t => ({ ...t, terminalId: null, connected: false }))
-    localStorage.setItem(`terminal_drawer_tabs:${projectPath}`, JSON.stringify(toSave))
-    localStorage.setItem(`terminal_drawer_active_tab:${projectPath}`, activeTabId)
-  }, [tabs, activeTabId, projectPath])
+export default function TerminalDrawer({
+  projectPath,
+  isOpen,
+  onClose,
+  onProjectPathChange,
+  isGlobal = false
+}: TerminalDrawerProps) {
+  const {
+    getProjectState,
+    addProjectTab,
+    removeProjectTab,
+    renameProjectTab,
+    reorderProjectTabs,
+    setProjectActiveTabId,
+    activeSessions,
+    reopenProject
+  } = useTerminalContext()
 
-  // Save drawer width to localStorage on change
+  const projectsWithSessions = Array.from(
+    new Map(activeSessions.map(s => [s.projectPath, s.projectName])).entries()
+  ).map(([path, name]) => ({ path, name }))
+
+  const { tabs, activeTabId } = getProjectState(projectPath)
+  const [width, setWidth] = useState<number>(() => Number(localStorage.getItem('terminal_drawer_width')) || DEFAULT_WIDTH)
+
   useEffect(() => {
     localStorage.setItem('terminal_drawer_width', width.toString())
   }, [width])
 
   const activeTab      = tabs.find(t => t.id === activeTabId)
-  const isTerminalTab  = activeTab?.type === 'terminal'
 
   const handleResize = useCallback((delta: number) => {
     setWidth(w => Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, w + delta)))
@@ -50,45 +59,28 @@ export default function TerminalDrawer({ projectPath, isOpen, onClose }: Termina
   }
 
   const addTerminal = (opts?: { name?: string; initialCommand?: string }) => {
-    const id    = Date.now().toString()
-    const count = tabs.filter(t => t.type === 'terminal').length + 1
-    const name  = opts?.name ?? `Terminal ${count}`
-    setTabs(prev => [
-      ...prev,
-      { id, name, type: 'terminal', terminalId: null, connected: false, initialCommand: opts?.initialCommand }
-    ])
-    setActiveTabId(id)
+    addProjectTab(projectPath, 'terminal', opts)
   }
 
   const addNote = () => {
-    const id    = Date.now().toString()
-    const count = tabs.filter(t => t.type === 'note').length + 1
-    setTabs(prev => [...prev, { id, name: `Nota ${count}`, type: 'note', terminalId: null, connected: false }])
-    setActiveTabId(id)
+    addProjectTab(projectPath, 'note')
   }
 
   const removeTab = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    const tab = tabs.find(t => t.id === id)
-    if (tab?.type === 'terminal' && tab.terminalId) window.api.terminal.kill(tab.terminalId)
-    if (tab?.type === 'note') localStorage.removeItem(`note:${projectPath}:${id}`)
+    removeProjectTab(projectPath, id)
     const remaining = tabs.filter(t => t.id !== id)
-    if (remaining.length === 0) { onClose(); return }
-    setTabs(remaining)
-    if (activeTabId === id) setActiveTabId(remaining[0].id)
+    if (remaining.length === 0) {
+      onClose()
+    }
   }
 
   const renameTab = (id: string, name: string) => {
-    setTabs(prev => prev.map(t => t.id === id ? { ...t, name } : t))
+    renameProjectTab(projectPath, id, name)
   }
 
   const handleReorderTabs = (startIndex: number, endIndex: number) => {
-    setTabs(prev => {
-      const result = Array.from(prev)
-      const [removed] = result.splice(startIndex, 1)
-      result.splice(endIndex, 0, removed)
-      return result
-    })
+    reorderProjectTabs(projectPath, startIndex, endIndex)
   }
 
   return (
@@ -99,27 +91,67 @@ export default function TerminalDrawer({ projectPath, isOpen, onClose }: Termina
         className="editor-terminal h-full flex-shrink-0"
       >
         {/* Header */}
-        <div className="editor-terminal-header">
-          <div className="flex items-center gap-2">
-            <TermIcon className="w-3.5 h-3.5 tx-muted" />
-            <span className="text-[11px] font-semibold tx-muted uppercase tracking-widest">
-              {isTerminalTab ? 'Terminal' : 'Anotação'}
-            </span>
+        <div className="editor-terminal-header border-b" style={{ borderColor: 'var(--line)' }}>
+          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+            <TermIcon className="w-3.5 h-3.5 tx-muted flex-shrink-0" />
+            
+            {projectsWithSessions.length > 1 && onProjectPathChange ? (
+              // Seletor de projetos em abas compactas se houver múltiplos
+              <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar py-0.5">
+                {projectsWithSessions.map(proj => {
+                  const isActive = proj.path === projectPath
+                  return (
+                    <button
+                      key={proj.path}
+                      onClick={() => onProjectPathChange(proj.path)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-semibold transition whitespace-nowrap ${
+                        isActive
+                          ? 'bg-blue-600/10 border border-blue-500/30 text-blue-400 font-semibold'
+                          : 'bg-transparent border border-transparent text-neutral-400 hover:text-neutral-200'
+                      }`}
+                      title={proj.name}
+                    >
+                      {proj.name}
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              // Caso contrário, mostra apenas o nome do projeto correspondente
+              <span className="text-[10px] font-bold tx-secondary truncate tracking-wide uppercase">
+                {projectsWithSessions.find(p => p.path === projectPath)?.name || 'Terminal'}
+              </span>
+            )}
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-[var(--line-subtle)] rounded-md text-[var(--tx-muted)] hover:text-[var(--tx-primary)] transition-colors flex items-center justify-center"
-            title="Fechar Terminal"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {isGlobal && (
+              <button
+                onClick={() => {
+                  reopenProject?.(projectPath, activeTabId)
+                  onClose()
+                }}
+                className="p-1 hover:bg-[var(--line-subtle)] rounded-md text-[var(--tx-muted)] hover:text-[var(--tx-primary)] transition flex items-center justify-center"
+                title="Abrir no Projeto (Ir para o Dashboard)"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 hover:bg-[var(--line-subtle)] rounded-md text-[var(--tx-muted)] hover:text-[var(--tx-primary)] transition-colors flex items-center justify-center"
+              title="Fechar Terminal"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Tabs bar */}
         <DrawerTabs
           tabs={tabs}
           activeTabId={activeTabId}
-          onSelectTab={setActiveTabId}
+          onSelectTab={(id) => setProjectActiveTabId(projectPath, id)}
           onAddTerminal={addTerminal}
           onAddNote={addNote}
           onRemoveTab={removeTab}
@@ -142,12 +174,8 @@ export default function TerminalDrawer({ projectPath, isOpen, onClose }: Termina
                 tab={t}
                 isOpen={isOpen && isActive}
                 drawerWidth={width}
-                onTerminalCreated={(termId) => {
-                  setTabs(prev => prev.map(tab => tab.id === t.id ? { ...tab, terminalId: termId, connected: true } : tab))
-                }}
-                onTerminalExit={() => {
-                  setTabs(prev => prev.map(tab => tab.id === t.id ? { ...tab, connected: false } : tab))
-                }}
+                onTerminalCreated={() => {}}
+                onTerminalExit={() => {}}
               />
             </div>
           )

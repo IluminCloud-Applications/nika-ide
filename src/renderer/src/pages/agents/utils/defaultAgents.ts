@@ -6,6 +6,7 @@ import { BACKEND_INSTRUCTIONS } from './instructions/backend'
 import { IA_INSTRUCTIONS } from './instructions/ia'
 import { PRODUCAO_INSTRUCTIONS } from './instructions/producao'
 import { OPENSOURCE_INSTRUCTIONS } from './instructions/opensource'
+import { BRAINSTORM_INSTRUCTIONS } from './instructions/brainstorm'
 
 export const DEFAULT_AGENTS: Agent[] = [
   {
@@ -77,5 +78,15 @@ export const DEFAULT_AGENTS: Agent[] = [
     gradient: 'from-rose-600/20 to-rose-500/5',
     iconBg: 'bg-rose-500/15 border-rose-500/25',
     tags: ['single-user', 'setup-wizard', 'local-app', 'white-label']
+  },
+  {
+    id: 'brainstorm',
+    name: 'Brainstorm',
+    description: 'Agente especializado em analisar o projeto, entender o público-alvo, dores e propor ideias estratégicas de features, adicionando-as diretamente na coluna de Ideias.',
+    systemInstructions: BRAINSTORM_INSTRUCTIONS,
+    isDefault: true,
+    gradient: 'from-orange-600/20 to-orange-500/5',
+    iconBg: 'bg-orange-500/15 border-orange-500/25',
+    tags: ['brainstorm', 'features', 'marketing', 'product-strategy']
   }
 ]
