@@ -187,6 +187,7 @@ export default function TerminalDrawer({
             projectPath={projectPath}
             terminalTabs={tabs}
             onSendToTerminal={sendToTerminal}
+            onSelectTab={(id) => setProjectActiveTabId(projectPath, id)}
           />
         )}
       </div>

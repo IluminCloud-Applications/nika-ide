@@ -8,6 +8,7 @@ interface NotepadViewProps {
   projectPath: string
   terminalTabs: Tab[]
   onSendToTerminal: (terminalId: string, text: string) => void
+  onSelectTab: (tabId: string) => void
 }
 
 function getStorageKey(projectPath: string, noteId: string) {
@@ -15,7 +16,7 @@ function getStorageKey(projectPath: string, noteId: string) {
 }
 
 export default function NotepadView({
-  noteId, projectPath, terminalTabs, onSendToTerminal
+  noteId, projectPath, terminalTabs, onSendToTerminal, onSelectTab
 }: NotepadViewProps) {
   const [content, setContent] = useState('')
   const [copied, setCopied] = useState(false)
@@ -60,6 +61,10 @@ export default function NotepadView({
 
   const handleSendToTerminal = (terminalId: string) => {
     if (content.trim()) {
+      const targetTab = terminalTabs.find(t => t.terminalId === terminalId)
+      if (targetTab) {
+        onSelectTab(targetTab.id)
+      }
       onSendToTerminal(terminalId, content)
       setShowTerminalPicker(false)
     }
