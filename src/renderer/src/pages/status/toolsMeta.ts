@@ -86,4 +86,13 @@ export const TOOLS_META: Omit<ToolStatus, 'version' | 'installed'>[] = [
     category: 'ai',
     required: false,
   },
+  {
+    id: 'cloudflared',
+    name: 'cloudflared',
+    label: 'Cloudflared',
+    description: 'Tunnel Cloudflare — usado para gerar links públicos temporários do seu projeto. O Nika IDE usa a imagem Docker automaticamente, mas você pode instalar nativamente também.',
+    installUrl: 'https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/',
+    category: 'tunnel',
+    required: false,
+  },
 ]

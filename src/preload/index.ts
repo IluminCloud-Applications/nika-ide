@@ -25,7 +25,9 @@ contextBridge.exposeInMainWorld('api', {
     gitCommit: (projectPath: string, message: string) => ipcRenderer.invoke('projects:git-commit', { projectPath, message }),
     gitStartDiffPreview: (projectPath: string, hash: string) => ipcRenderer.invoke('projects:git-start-diff-preview', projectPath, hash),
     gitStopDiffPreview: (projectPath: string, hash: string) => ipcRenderer.invoke('projects:git-stop-diff-preview', projectPath, hash),
-    open: (projectPath: string) => ipcRenderer.invoke('projects:open', projectPath)
+    open: (projectPath: string) => ipcRenderer.invoke('projects:open', projectPath),
+    getNextVersion: (projectPath: string) => ipcRenderer.invoke('projects:get-next-version', projectPath),
+    bumpVersion: (projectPath: string, version: string) => ipcRenderer.invoke('projects:bump-version', { projectPath, version })
   },
   skills: {
     getState: () => ipcRenderer.invoke('skills:get-state'),
@@ -53,6 +55,13 @@ contextBridge.exposeInMainWorld('api', {
     writeFile: (filePath: string, content: string) => ipcRenderer.invoke('fs:write-file', { filePath, content }),
     readImage: (filePath: string) => ipcRenderer.invoke('fs:read-image', filePath),
     searchFiles: (rootPath: string, query: string) => ipcRenderer.invoke('fs:search-files', { rootPath, query }),
+    onChanged: (callback: (payload: { event: string; path: string }) => void) => {
+      const listener = (_: any, payload: any) => callback(payload)
+      ipcRenderer.on('fs:changed', listener)
+      return () => {
+        ipcRenderer.removeListener('fs:changed', listener)
+      }
+    }
   },
   terminal: {
     create: (cwd: string) => ipcRenderer.invoke('terminal:create', { cwd }),
@@ -148,6 +157,12 @@ contextBridge.exposeInMainWorld('api', {
     save: (prompt: any) => ipcRenderer.invoke('prompts:save', prompt),
     delete: (id: string) => ipcRenderer.invoke('prompts:delete', id)
   },
+  docs: {
+    list: () => ipcRenderer.invoke('docs:list'),
+    get: (slug: string) => ipcRenderer.invoke('docs:get', slug),
+    save: (doc: any) => ipcRenderer.invoke('docs:save', doc),
+    delete: (slug: string) => ipcRenderer.invoke('docs:delete', slug)
+  },
   tasks: {
     list:       (projectPath: string, column?: string) =>
                   ipcRenderer.invoke('tasks:list', { projectPath, column }),
@@ -208,5 +223,16 @@ contextBridge.exposeInMainWorld('api', {
       ipcRenderer.invoke('docker:cleanup-all', { projectPath }),
     diskUsage: () => ipcRenderer.invoke('docker:disk-usage'),
     smartPrune: () => ipcRenderer.invoke('docker:smart-prune'),
+  },
+  tunnel: {
+    status: () => ipcRenderer.invoke('tunnel:status'),
+    start: (port: number, projectPath?: string) => ipcRenderer.invoke('tunnel:start', { port, projectPath }),
+    stop: () => ipcRenderer.invoke('tunnel:stop'),
+    getLogs: () => ipcRenderer.invoke('tunnel:get-logs'),
+    onState: (cb: (state: { running: boolean; url: string | null; containerId: string | null; error: string | null }) => void) => {
+      const listener = (_: any, payload: any) => cb(payload)
+      ipcRenderer.on('tunnel:state', listener)
+      return () => ipcRenderer.removeListener('tunnel:state', listener)
+    },
   }
 })

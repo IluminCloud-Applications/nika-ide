@@ -1,12 +1,57 @@
-import { app, ipcMain, dialog } from 'electron'
+import { app, ipcMain, dialog, BrowserWindow } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { execSync, spawn, ChildProcess } from 'node:child_process'
+import { execSync, execFileSync, spawn, ChildProcess } from 'node:child_process'
 import { loadMcpState, syncMcpStateToProject } from './mcp'
 import { updateProjectInstructions } from './projectInstructions'
 
 const diffPreviews = new Map<string, { proc: ChildProcess; tempPath: string }>()
+
+let activeProjectWatcherClose: (() => void) | null = null
+
+function watchDirectory(dirPath: string, onChange: (event: string, filepath: string) => void) {
+  const watchers = new Map<string, any>()
+  const ignoredDirs = new Set(['node_modules', '.git', 'dist', 'build', '.venv', 'venv'])
+
+  function register(target: string) {
+    if (watchers.has(target)) return
+    try {
+      const watcher = fs.watch(target, { persistent: true }, (event, filename) => {
+        const fullPath = filename ? path.join(target, filename) : target
+        onChange(event, fullPath)
+        
+        if (event === 'rename' && filename) {
+          try {
+            const stat = fs.statSync(fullPath)
+            if (stat.isDirectory()) {
+              setTimeout(() => register(fullPath), 100)
+            }
+          } catch {}
+        }
+      })
+      watchers.set(target, watcher)
+      
+      const entries = fs.readdirSync(target, { withFileTypes: true })
+      for (const entry of entries) {
+        if (entry.isDirectory() && !ignoredDirs.has(entry.name) && !entry.name.startsWith('.')) {
+          register(path.join(target, entry.name))
+        }
+      }
+    } catch (e) {
+      console.error(`Failed to watch ${target}:`, e)
+    }
+  }
+
+  register(dirPath)
+
+  return () => {
+    for (const [_, watcher] of watchers) {
+      try { watcher.close() } catch {}
+    }
+    watchers.clear()
+  }
+}
 
 const getProjectsDbPath = () => path.join(app.getPath('userData'), 'nika_projects.json')
 const getSettingsPath  = () => path.join(app.getPath('userData'), 'nika_settings.json')
@@ -487,6 +532,55 @@ export function registerProjectHandlers() {
     }
   })
 
+  ipcMain.handle('projects:get-next-version', (_, projectPath: string) => {
+    const pkgPaths = [
+      path.join(projectPath, 'frontend', 'package.json'),
+      path.join(projectPath, 'package.json'),
+    ]
+
+    for (const pkgPath of pkgPaths) {
+      if (fs.existsSync(pkgPath)) {
+        try {
+          const raw = fs.readFileSync(pkgPath, 'utf-8')
+          const pkg = JSON.parse(raw)
+          const current: string = pkg.version || '0.0.0'
+          const parts = current.split('.').map(Number)
+          while (parts.length < 3) parts.push(0)
+          parts[2] = (parts[2] || 0) + 1
+          const next = parts.join('.')
+          return { current, next, pkgPath }
+        } catch {
+          // ignore parse errors, try next
+        }
+      }
+    }
+
+    return { current: '0.0.0', next: '0.0.1', pkgPath: null }
+  })
+
+  ipcMain.handle('projects:bump-version', (_, { projectPath, version }: { projectPath: string; version: string }) => {
+    const pkgPaths = [
+      path.join(projectPath, 'frontend', 'package.json'),
+      path.join(projectPath, 'package.json'),
+    ]
+
+    for (const pkgPath of pkgPaths) {
+      if (fs.existsSync(pkgPath)) {
+        try {
+          const raw = fs.readFileSync(pkgPath, 'utf-8')
+          const pkg = JSON.parse(raw)
+          pkg.version = version
+          fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8')
+          return { success: true, pkgPath }
+        } catch (e: any) {
+          return { success: false, error: e.message }
+        }
+      }
+    }
+
+    return { success: false, error: 'package.json não encontrado' }
+  })
+
   ipcMain.handle('projects:git-commit', (_, { projectPath, message }: { projectPath: string; message: string }) => {
     try {
       if (!fs.existsSync(path.join(projectPath, '.git'))) {
@@ -517,7 +611,7 @@ export function registerProjectHandlers() {
         return { success: true, noChanges: true }
       }
 
-      runGit(`git commit -m "${message.replace(/"/g, '\\"')}"`, projectPath)
+      execFileSync('git', ['commit', '-m', message], { cwd: projectPath, encoding: 'utf-8', timeout: 10000 })
       return { success: true }
     } catch (e: any) {
       throw new Error('Erro ao salvar versão: ' + e.message)
@@ -635,6 +729,23 @@ export function registerProjectHandlers() {
       syncMcpStateToProject(projectPath, mcpState)
     } catch (e) {
       console.error('Failed to sync MCP state on project open:', e)
+    }
+
+    // 3. Setup file watcher
+    if (activeProjectWatcherClose) {
+      activeProjectWatcherClose()
+      activeProjectWatcherClose = null
+    }
+
+    try {
+      activeProjectWatcherClose = watchDirectory(projectPath, (event, filepath) => {
+        const wins = BrowserWindow.getAllWindows()
+        if (wins.length > 0) {
+          wins[0].webContents.send('fs:changed', { event, path: filepath })
+        }
+      })
+    } catch (e) {
+      console.error('Failed to start file watcher:', e)
     }
 
     return { success: true }

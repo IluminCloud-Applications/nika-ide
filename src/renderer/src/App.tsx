@@ -8,6 +8,7 @@ import StatusPage from './pages/status'
 import McpPage from './pages/mcp'
 import AgentsPage from './pages/agents'
 import PromptsPage from './pages/prompts'
+import DocsPage from './pages/docs'
 import DockerPage from './pages/docker'
 import AppSidebar, { NavRoute } from './components/layout/AppSidebar'
 import { Theme } from './pages/settings/ThemeSelector'
@@ -263,6 +264,7 @@ function AppContent({
               {mainRoute === 'skills'    && <SkillsPage />}
               {mainRoute === 'mcp'       && <McpPage />}
               {mainRoute === 'prompts'   && <PromptsPage />}
+              {mainRoute === 'docs'      && <DocsPage />}
               {mainRoute === 'agents'    && <AgentsPage />}
               {mainRoute === 'status'    && <StatusPage />}
               {mainRoute === 'docker'    && <DockerPage />}

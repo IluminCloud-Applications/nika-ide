@@ -20,6 +20,8 @@ declare global {
         gitStartDiffPreview: (projectPath: string, hash: string) => Promise<{ url: string }>
         gitStopDiffPreview: (projectPath: string, hash: string) => Promise<{ success: boolean }>
         open: (projectPath: string) => Promise<{ success: boolean }>
+        getNextVersion: (projectPath: string) => Promise<{ current: string; next: string; pkgPath: string | null }>
+        bumpVersion: (projectPath: string, version: string) => Promise<{ success: boolean; pkgPath?: string; error?: string }>
       }
       skills: {
         getState: () => Promise<Record<string, boolean>>
@@ -43,6 +45,7 @@ declare global {
         writeFile: (filePath: string, content: string) => Promise<any>
         readImage: (filePath: string) => Promise<string | null>
         searchFiles: (rootPath: string, query: string) => Promise<Array<{ path: string; name: string; matches: Array<{ line: number; text: string }> }>>
+        onChanged: (callback: (payload: { event: string; path: string }) => void) => () => void
       }
       terminal: {
         create: (cwd: string) => Promise<string>
@@ -118,6 +121,12 @@ declare global {
         list: () => Promise<any[]>
         save: (prompt: any) => Promise<{ success: boolean }>
         delete: (id: string) => Promise<{ success: boolean }>
+      }
+      docs: {
+        list: () => Promise<Array<{ slug: string; name: string; description: string; updatedAt: string }>>
+        get: (slug: string) => Promise<{ slug: string; name: string; description: string; content: string } | null>
+        save: (doc: any) => Promise<{ success: boolean; slug: string }>
+        delete: (slug: string) => Promise<{ success: boolean }>
       }
       tasks: {
         list:         (projectPath: string, column?: string) => Promise<any[]>

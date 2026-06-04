@@ -1,4 +1,4 @@
-import { FolderKanban, ShieldCheck, Settings, Bot, Palette, Container, Brush, Brain, MessageSquareCode } from 'lucide-react'
+import { FolderKanban, ShieldCheck, Settings, Bot, Palette, Container, Brush, Brain, MessageSquareCode, BookOpen } from 'lucide-react'
 import { Theme } from '../../pages/settings/ThemeSelector'
 import faviconUrl from '../../assets/favicon.webp'
 
@@ -18,7 +18,7 @@ function McpIcon(props: React.SVGProps<SVGSVGElement>) {
   )
 }
 
-export type NavRoute = 'projects' | 'studio' | 'skills' | 'mcp' | 'status' | 'agents' | 'prompts' | 'settings' | 'docker'
+export type NavRoute = 'projects' | 'studio' | 'skills' | 'mcp' | 'status' | 'agents' | 'prompts' | 'docs' | 'settings' | 'docker'
 
 interface AppSidebarProps {
   activeRoute: NavRoute
@@ -42,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'mcp',      label: 'MCP',            icon: McpIcon,        enabled: true,  group: 'main' },
   { id: 'skills',   label: 'Skills',         icon: Brain,          enabled: true,  group: 'main' },
   { id: 'prompts',  label: 'Prompts',        icon: MessageSquareCode,  enabled: true,  group: 'main' },
+  { id: 'docs',     label: 'Docs',           icon: BookOpen,           enabled: true,  group: 'main' },
   { id: 'status',   label: 'Status',         icon: ShieldCheck,    enabled: true,  group: 'bottom' },
   { id: 'docker',   label: 'Gestão',          icon: Container,      enabled: true,  group: 'bottom' },
   { id: 'settings', label: 'Configurações',  icon: Settings,       enabled: true,  group: 'bottom' },

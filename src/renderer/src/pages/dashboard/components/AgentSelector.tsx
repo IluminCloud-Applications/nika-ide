@@ -61,7 +61,7 @@ export default function AgentSelector({ projectPath, activeAgent, onSelectAgent 
       >
         <i className="ri-robot-2-line text-blue-400 text-xs" />
         <span className="truncate max-w-[110px] tx-secondary">
-          Agente: {activeAgent ? activeAgent.name : 'Carregando...'}
+          {activeAgent ? activeAgent.name : 'Carregando...'}
         </span>
         <i className={`ri-arrow-down-s-line tx-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>

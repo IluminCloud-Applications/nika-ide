@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Folder, FolderOpen, ChevronDown, ChevronRight } from 'lucide-react'
 import { getFileIcon } from './fileIcons'
 
@@ -19,6 +19,22 @@ export default function ExplorerNode({ item, depth, onSelectFile }: ExplorerNode
   const [children, setChildren] = useState<FileItem[]>([])
   const [loading, setLoading] = useState(false)
 
+  const refreshChildren = async (showLoading = false) => {
+    if (showLoading) setLoading(true)
+    try {
+      const list = await window.api.fs.readDir(item.path)
+      const sorted = list.sort((a: FileItem, b: FileItem) => {
+        if (a.isDirectory === b.isDirectory) return a.name.localeCompare(b.name)
+        return a.isDirectory ? -1 : 1
+      })
+      setChildren(sorted)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      if (showLoading) setLoading(false)
+    }
+  }
+
   const toggleOpen = async () => {
     if (!item.isDirectory) {
       onSelectFile(item.path)
@@ -26,22 +42,39 @@ export default function ExplorerNode({ item, depth, onSelectFile }: ExplorerNode
     }
     const nextState = !isOpen
     setIsOpen(nextState)
-    if (nextState && children.length === 0) {
-      setLoading(true)
-      try {
-        const list = await window.api.fs.readDir(item.path)
-        const sorted = list.sort((a: FileItem, b: FileItem) => {
-          if (a.isDirectory === b.isDirectory) return a.name.localeCompare(b.name)
-          return a.isDirectory ? -1 : 1
-        })
-        setChildren(sorted)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
+    if (nextState) {
+      refreshChildren(children.length === 0)
     }
   }
+
+  useEffect(() => {
+    if (!item.isDirectory || !isOpen) return
+    if (!window.api.fs.onChanged) return
+
+    const unsubscribe = window.api.fs.onChanged((payload) => {
+      const normalizedPath = payload.path.replace(/\\/g, '/')
+      const normalizedItemPath = item.path.replace(/\\/g, '/')
+      const fileDir = normalizedPath.substring(0, normalizedPath.lastIndexOf('/'))
+      if (fileDir === normalizedItemPath) {
+        refreshChildren(false)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [item.path, isOpen])
+
+  useEffect(() => {
+    if (!item.isDirectory || !isOpen) return
+
+    const handleForceRefresh = () => {
+      refreshChildren(false)
+    }
+
+    window.addEventListener('fs:force-refresh', handleForceRefresh)
+    return () => {
+      window.removeEventListener('fs:force-refresh', handleForceRefresh)
+    }
+  }, [item.path, isOpen])
 
   const { Icon, color } = getFileIcon(item.name)
   const paddingLeft = 8 + depth * 14

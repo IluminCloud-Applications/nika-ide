@@ -119,5 +119,27 @@ export const TOOLS = [
       },
       required: ['name', 'description', 'content']
     }
+  },
+  {
+    name: 'list_docs',
+    description: 'Lista todas as documentações salvas pelo usuário no Nika IDE (nome, slug e descrição). Use esta tool SEMPRE que precisar de documentação atualizada de uma API ou biblioteca. Após listar, use get_doc com o slug para obter o conteúdo completo.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'get_doc',
+    description: 'Obtém o conteúdo completo de uma documentação pelo slug. Use após list_docs para carregar a documentação de uma API ou lib específica (ex: LangChain, Brevo, AssemblyAI) antes de implementar integrações.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        slug: {
+          type: 'string',
+          description: 'O slug da documentação obtido via list_docs (ex: "langchain", "brevo-api", "assemblyai")'
+        }
+      },
+      required: ['slug']
+    }
   }
 ]

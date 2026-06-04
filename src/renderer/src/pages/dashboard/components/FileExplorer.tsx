@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Search, RefreshCw, FolderTree, X, ChevronRight, Loader2 } from 'lucide-react'
+import { Search, RefreshCw, FolderTree, X, ChevronRight, Loader2, FolderOpen } from 'lucide-react'
 import ExplorerNode, { FileItem } from './explorer/ExplorerNode'
 import { getFileIcon } from './explorer/fileIcons'
 
@@ -36,10 +36,28 @@ export default function FileExplorer({ projectPath, onSelectFile }: FileExplorer
     }
   }
 
+  const handleRefreshClick = () => {
+    loadRoot()
+    window.dispatchEvent(new CustomEvent('fs:force-refresh'))
+  }
+
   useEffect(() => {
     loadRoot()
     setSearchQuery('')
     setSearchResults(null)
+  }, [projectPath])
+
+  useEffect(() => {
+    if (!window.api.fs.onChanged) return
+    const unsubscribe = window.api.fs.onChanged((payload) => {
+      const normalizedPath = payload.path.replace(/\\/g, '/')
+      const normalizedProjectPath = projectPath.replace(/\\/g, '/')
+      const fileDir = normalizedPath.substring(0, normalizedPath.lastIndexOf('/'))
+      if (fileDir === normalizedProjectPath) {
+        loadRoot()
+      }
+    })
+    return () => unsubscribe()
   }, [projectPath])
 
   // Debounced search - searches both names and file contents
@@ -74,27 +92,34 @@ export default function FileExplorer({ projectPath, onSelectFile }: FileExplorer
     setSearching(false)
   }
 
-
-
   const projectName = projectPath.split('/').pop() || 'Projeto'
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden h-full">
       {/* Header */}
       <div className="editor-panel-header">
-        <div className="flex items-center gap-1.5">
-          <FolderTree className="w-3.5 h-3.5 tx-muted" />
-          <span className="text-[11px] font-semibold tx-muted uppercase tracking-widest truncate max-w-[120px]">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <FolderTree className="w-3.5 h-3.5 tx-muted shrink-0" />
+          <span className="text-[11px] font-semibold tx-muted uppercase tracking-widest truncate max-w-[110px]">
             {projectName}
           </span>
         </div>
-        <button
-          onClick={loadRoot}
-          className="btn-ghost p-1 rounded"
-          title="Recarregar"
-        >
-          <RefreshCw className="w-3 h-3" />
-        </button>
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          <button
+            onClick={() => window.api.system.openPath(projectPath)}
+            className="btn-ghost p-1 rounded hover:text-blue-400 transition"
+            title="Abrir no Explorador de Arquivos"
+          >
+            <FolderOpen className="w-3.5 h-3.5 tx-muted" />
+          </button>
+          <button
+            onClick={handleRefreshClick}
+            className="btn-ghost p-1 rounded hover:text-blue-400 transition"
+            title="Recarregar"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Search */}

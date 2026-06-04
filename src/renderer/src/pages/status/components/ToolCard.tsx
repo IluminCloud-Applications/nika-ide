@@ -8,7 +8,7 @@ export interface ToolStatus {
   installed: boolean
   description: string
   installUrl: string
-  category: 'core' | 'runtime' | 'ai'
+  category: 'core' | 'runtime' | 'ai' | 'tunnel'
   required: boolean
 }
 
@@ -36,8 +36,9 @@ export default function ToolCard({ tool, loading, installing, onInstallClick, on
     core:    'text-blue-400 bg-blue-500/10 border-blue-500/20',
     runtime: 'text-violet-400 bg-violet-500/10 border-violet-500/20',
     ai:      'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    tunnel:  'text-orange-400 bg-orange-500/10 border-orange-500/20',
   }
-  const categoryLabels = { core: 'Core', runtime: 'Runtime', ai: 'AI CLI' }
+  const categoryLabels = { core: 'Core', runtime: 'Runtime', ai: 'AI CLI', tunnel: 'Tunnel' }
 
   return (
     <div className={`

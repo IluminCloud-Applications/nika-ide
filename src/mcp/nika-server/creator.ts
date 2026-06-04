@@ -226,3 +226,38 @@ export function createSkill(args: SkillArgs, projectPath: string): string {
 
   return `Skill "${skillId}" criada com sucesso no projeto ativo e registrada no sistema!`
 }
+
+export function listDocs(): string {
+  const dbPath = path.join(getUserDataPath(), 'nika_docs.json')
+  if (!fs.existsSync(dbPath)) {
+    return 'Nenhuma documentação encontrada. O usuário ainda não adicionou documentações.'
+  }
+  let list: any[] = []
+  try { list = JSON.parse(fs.readFileSync(dbPath, 'utf-8')) } catch (_) {}
+
+  if (list.length === 0) {
+    return 'Nenhuma documentação encontrada. O usuário ainda não adicionou documentações.'
+  }
+
+  const lines = list.map((d: any) =>
+    `- **${d.name}** (slug: \`${d.slug}\`) — ${d.description || 'Sem descrição'}`
+  )
+  return `## Documentações disponíveis (${list.length})\n\nUse \`get_doc\` com o slug para obter o conteúdo completo.\n\n${lines.join('\n')}`
+}
+
+export function getDoc(slug: string): string {
+  const dbPath = path.join(getUserDataPath(), 'nika_docs.json')
+  if (!fs.existsSync(dbPath)) {
+    return `Documentação com slug "${slug}" não encontrada.`
+  }
+  let list: any[] = []
+  try { list = JSON.parse(fs.readFileSync(dbPath, 'utf-8')) } catch (_) {}
+
+  const doc = list.find((d: any) => d.slug === slug)
+  if (!doc) {
+    return `Documentação com slug "${slug}" não encontrada. Use list_docs para ver os disponíveis.`
+  }
+
+  return `# ${doc.name}\n\n**Slug:** ${doc.slug}\n**Descrição:** ${doc.description || 'N/A'}\n\n---\n\n${doc.content}`
+}
+

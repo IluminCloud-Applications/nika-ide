@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, Palette, User, Lock } from 'lucide-react'
+import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, Palette, User, Lock, Share2, Save } from 'lucide-react'
 import { Project } from '../../App'
 
 import FileExplorer from './components/FileExplorer'
@@ -26,6 +26,7 @@ import IconPickerModal from './components/IconPickerModal'
 import { useTerminalContext } from '../../context/TerminalContext'
 import ProjectTabs from './components/ProjectTabs'
 import EnvDrawer from './components/EnvDrawer'
+import ShareTunnelModal from './components/ShareTunnelModal'
 
 export default function DashboardPage({
   project,
@@ -48,9 +49,10 @@ export default function DashboardPage({
   const [sidebarOpen, setSidebarOpen]         = useState(true)
   const [centerView, setCenterView]           = useState<CenterView>('preview')
   const [activeAgent, setActiveAgent]         = useState<Agent>(DEFAULT_AGENTS[0])
-  const [userModalOpen, setUserModalOpen]     = useState(false)
-  const [designModalOpen, setDesignModalOpen] = useState(false)
-  const [envDrawerOpen, setEnvDrawerOpen]     = useState(false)
+  const [userModalOpen, setUserModalOpen]       = useState(false)
+  const [designModalOpen, setDesignModalOpen]   = useState(false)
+  const [envDrawerOpen, setEnvDrawerOpen]       = useState(false)
+  const [shareModalOpen, setShareModalOpen]     = useState(false)
 
 
   useEffect(() => {
@@ -635,15 +637,6 @@ export default function DashboardPage({
             {isRunning ? <Square className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
             {isRunning ? 'Parar' : 'Iniciar'}
           </button>
-          <button
-            onClick={() => setSaveVersionOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border transition text-[11px] font-medium"
-            style={{ borderColor: 'var(--line)', backgroundColor: 'var(--surface-overlay)', color: 'var(--tx-secondary)' }}
-            title="Salvar Versão"
-          >
-            <i className="ri-git-commit-line text-blue-400 text-xs" />
-            <span className="tx-secondary">Salvar</span>
-          </button>
           <div className="divider-y h-5" />
           <AgentSelector
             projectPath={project.path}
@@ -667,6 +660,14 @@ export default function DashboardPage({
             <Palette className="w-3.5 h-3.5" />
           </button>
           <button
+            onClick={() => setShareModalOpen(!shareModalOpen)}
+            disabled={!(isRunning && previewReady)}
+            className={`editor-icon-btn ${shareModalOpen ? 'active' : ''} disabled:opacity-40 disabled:cursor-not-allowed`}
+            title={isRunning && previewReady ? 'Compartilhar — Link Público via Cloudflare Tunnel' : 'Inicie o projeto para compartilhar'}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+          </button>
+          <button
             onClick={() => setGitHistoryOpen(!gitHistoryOpen)}
             className={`editor-icon-btn ${gitHistoryOpen ? 'active' : ''}`}
             title="Histórico Git"
@@ -680,6 +681,14 @@ export default function DashboardPage({
             title="Variáveis de Ambiente"
           >
             <Lock className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => setSaveVersionOpen(true)}
+            className="editor-icon-btn"
+            title="Salvar Versão"
+          >
+            <Save className="w-3.5 h-3.5" />
           </button>
 
           <button
@@ -1006,6 +1015,7 @@ export default function DashboardPage({
         onClose={() => setSaveVersionOpen(false)}
         onSave={handleSaveVersion}
         saving={savingVersion}
+        projectPath={project.path}
       />
 
       <UserModal
@@ -1014,6 +1024,13 @@ export default function DashboardPage({
         projectPath={project.path}
         isRunning={isRunning}
         onAutologin={handleAutologin}
+      />
+
+      <ShareTunnelModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        localPort={5177}
+        projectPath={project.path}
       />
 
       {gitHistoryOpen && (

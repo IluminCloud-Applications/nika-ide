@@ -12,6 +12,8 @@ import { registerDatabaseHandlers } from './ipc/database'
 import { registerWebviewDevtools } from './ipc/webview-devtools'
 import { registerDockerHandlers } from './ipc/docker'
 import { startBrowserBridge } from './ipc/browser-bridge'
+import { registerDocsHandlers } from './ipc/docs'
+import { registerTunnelHandlers } from './ipc/tunnel'
 
 // Patch stderr to ignore benign Electron/webview navigation errors (abort, refused, etc.)
 const originalStderrWrite = process.stderr.write
@@ -89,6 +91,8 @@ app.whenReady().then(() => {
   registerTasksHandlers()
   registerDatabaseHandlers()
   registerDockerHandlers()
+  registerDocsHandlers()
+  registerTunnelHandlers()
   registerWebviewDevtools(() => mainWindow)
   startBrowserBridge()
 

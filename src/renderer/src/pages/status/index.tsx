@@ -99,6 +99,7 @@ export default function StatusPage() {
     { key: 'core',    label: 'Core' },
     { key: 'runtime', label: 'Runtime' },
     { key: 'ai',      label: 'AI CLI' },
+    { key: 'tunnel',  label: 'Tunnel & Compartilhamento' },
   ] as const
 
   return (

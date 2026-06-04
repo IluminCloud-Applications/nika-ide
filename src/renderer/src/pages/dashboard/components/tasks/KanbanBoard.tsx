@@ -163,7 +163,7 @@ export default function KanbanBoard({ projectPath }: KanbanBoardProps) {
       )}
 
       {/* Columns grid */}
-      <div className="flex-1 grid grid-cols-5 gap-3 p-4 overflow-hidden min-h-0">
+      <div className="flex-1 grid grid-cols-5 grid-rows-1 gap-3 p-4 overflow-hidden min-h-0">
         {COLUMNS.map(col => (
           <KanbanColumn
             key={col.id}

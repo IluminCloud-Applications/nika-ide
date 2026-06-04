@@ -33,9 +33,10 @@ const TOOL_CHECKS: Record<string, CheckFn> = {
     try { return execSync('python3 --version', execOptions).trim() }
     catch { return execSync('python --version',  execOptions).trim() }
   },
-  claude: () => execSync('claude --version', execOptions).trim(),
-  agy:    () => execSync('agy --version',    execOptions).trim(),
-  codex:  () => execSync('codex --version',  execOptions).trim(),
+  claude:       () => execSync('claude --version', execOptions).trim(),
+  agy:          () => execSync('agy --version',    execOptions).trim(),
+  codex:        () => execSync('codex --version',  execOptions).trim(),
+  cloudflared:  () => execSync('cloudflared --version', execOptions).trim(),
 }
 
 function checkTool(id: string): ToolCheckResult {
