@@ -842,13 +842,13 @@ export default function DashboardPage({
                       </div>
                     ) : (
                       <div
-                        className={`w-full flex ${viewport === 'mobile' ? 'items-start justify-center overflow-auto' : 'items-stretch overflow-hidden'} relative`}
+                        className={`w-full flex ${viewport === 'mobile' ? 'items-center justify-center overflow-hidden' : 'items-stretch overflow-hidden'} relative`}
                         style={{ backgroundColor: 'var(--surface-base)', flex: '1 1 0', minHeight: 0 }}
                       >
                         <div
                           className="relative transition-all duration-300"
                           style={viewport === 'mobile'
-                            ? { width: '412px', height: '915px', flexShrink: 0, border: '1px solid #27272a', borderRadius: '12px', marginTop: '16px', marginBottom: '16px', display: 'flex', overflow: 'hidden' }
+                            ? { width: '412px', height: 'min(915px, calc(100% - 32px))', flexShrink: 0, border: '1px solid #27272a', borderRadius: '12px', display: 'flex', overflow: 'hidden' }
                             : { position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'flex' }
                           }
                         >
