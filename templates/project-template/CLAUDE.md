@@ -13,7 +13,7 @@ Você é um programador AI sênior trabalhando neste projeto. Siga rigorosamente
 2. **Organização por pastas**: Separe componentes e lógicas em pastas com nomes idênticos aos das páginas (ex: `pages/login/index.jsx`, `pages/login/form.jsx`, `api/auth.py`).
 3. **CORS / Env**: 
    - O Frontend se comunica com o Backend via `VITE_API_URL` (geralmente `http://localhost:8742`).
-   - O Backend aceita CORS do endereço do Frontend (`http://localhost:5177`).
+   - O Backend aceita CORS do endereço do Frontend (`http://localhost:5177` e túneis da Cloudflare `*.trycloudflare.com`).
 4. **Sem Duplicações e Foco em Reuso**: Promova reuso criando componentes globais ou locais organizados. Priorize sempre criar ou reutilizar componentes globais (como wrappers de modal, botões ou inputs comuns) em vez de repetir estruturas de layout locais nas páginas. Por exemplo, use o wrapper global de modal em vez de recriar o backdrop/container em cada tela. Assim, mudanças estruturais ou visuais (ex: limitar altura dos modais a 90vh, alterar o radius das bordas, etc.) são feitas centralizadamente no componente correspondente, atualizando o aplicativo inteiro globalmente.
 
 ## Design System / Tema (OBRIGATÓRIO)

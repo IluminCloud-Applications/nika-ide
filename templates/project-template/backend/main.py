@@ -1,3 +1,4 @@
+import os
 import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,13 +12,18 @@ from api.auth import router as auth_router
 app = FastAPI(title="Nika API", description="Python API template for Nika IDE projects")
 
 # Configure CORS to accept requests from our Vite frontend (default: 5177)
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5177")
+origins = [
+    frontend_url,
+    "http://localhost:5177",
+    "http://localhost:5173",
+    "http://localhost:3333"
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5177",
-        "http://localhost:5173",
-        "http://localhost:3333"
-    ],
+    allow_origins=origins,
+    allow_origin_regex=r"https?://.*\.trycloudflare\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

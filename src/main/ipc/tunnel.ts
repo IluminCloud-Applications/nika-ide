@@ -54,32 +54,70 @@ async function getContainerUrl(containerId: string): Promise<string | null> {
 }
 
 /**
- * Patches the project's vite.config.js to add `allowedHosts: 'all'` inside
+ * Patches the project's Vite config to add `allowedHosts: true` inside
  * the `server` block. This is required so Vite accepts requests coming through
  * Cloudflare Tunnel domains (*.trycloudflare.com).
  * The patch is idempotent — no-op if already present.
  */
 function patchViteConfig(projectPath: string): void {
-  const configPath = path.join(projectPath, 'frontend', 'vite.config.js')
-  if (!fs.existsSync(configPath)) return
+  const configFiles = [
+    'vite.config.js',
+    'vite.config.ts',
+    'vite.config.mjs',
+    'vite.config.mts',
+    'vite.config.cjs',
+    'vite.config.cts'
+  ]
+
+  let configPath = ''
+  for (const file of configFiles) {
+    const p = path.join(projectPath, 'frontend', file)
+    if (fs.existsSync(p)) {
+      configPath = p
+      break
+    }
+  }
+
+  if (!configPath) return
 
   let content = fs.readFileSync(configPath, 'utf-8')
 
-  // Already patched
-  if (content.includes('allowedHosts')) return
+  // If already contains allowedHosts: 'all', migrate it to true
+  if (content.includes('allowedHosts')) {
+    if (content.includes("allowedHosts: 'all'") || content.includes('allowedHosts: "all"')) {
+      content = content.replace(/allowedHosts\s*:\s*(['"]all['"])/g, 'allowedHosts: true')
+      fs.writeFileSync(configPath, content, 'utf-8')
+    }
+    return
+  }
 
   // Inject after `host: true,` or `host: '0.0.0.0',` lines
   content = content.replace(
     /(host\s*:\s*(?:true|'0\.0\.0\.0'|"0\.0\.0\.0"),?\s*\n)/,
-    '$1    allowedHosts: \'all\',\n'
+    '$1    allowedHosts: true,\n'
   )
 
-  // Fallback: inject inside server: { ... } block if host line not found
+  // Fallback 1: inject inside server: { ... } block if host line not found
   if (!content.includes('allowedHosts')) {
     content = content.replace(
       /(server\s*:\s*\{)/,
-      '$1\n    allowedHosts: \'all\','
+      '$1\n    allowedHosts: true,'
     )
+  }
+
+  // Fallback 2: if there is no server block, add one inside defineConfig or export default
+  if (!content.includes('allowedHosts')) {
+    if (content.includes('defineConfig(')) {
+      content = content.replace(
+        /(defineConfig\(\s*.*?\{)/s,
+        '$1\n  server: {\n    allowedHosts: true,\n  },'
+      )
+    } else if (content.includes('export default {')) {
+      content = content.replace(
+        /(export\s+default\s*\{)/,
+        '$1\n  server: {\n    allowedHosts: true,\n  },'
+      )
+    }
   }
 
   fs.writeFileSync(configPath, content, 'utf-8')
