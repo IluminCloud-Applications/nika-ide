@@ -27,6 +27,11 @@
   /* Glass tint */
   --glass-bg:     rgba(18,18,20,0.65);
   --glass-border: rgba(255,255,255,0.06);
+
+  /* Warnings / Alerts */
+  --warning-bg:     rgba(245,158,11,0.08);
+  --warning-border: rgba(245,158,11,0.18);
+  --warning-text:   #fbbf24;
 }
 
 /* ── Light theme overrides ── */
@@ -48,6 +53,10 @@
 
   --glass-bg:     rgba(255,255,255,0.88);
   --glass-border: rgba(0,0,0,0.07);
+
+  --warning-bg:     #fffbeb;
+  --warning-border: #fde68a;
+  --warning-text:   #b45309;
 }
 
 /* ── Obsidian theme overrides ── */
@@ -69,6 +78,10 @@
 
   --glass-bg:     rgba(26,26,26,0.8);
   --glass-border: rgba(255,255,255,0.05);
+
+  --warning-bg:     rgba(245,158,11,0.08);
+  --warning-border: rgba(245,158,11,0.18);
+  --warning-text:   #fbbf24;
 }
 
 /* ── Notion theme overrides ── */
@@ -90,6 +103,10 @@
 
   --glass-bg:     rgba(251,251,250,0.9);
   --glass-border: rgba(55,53,47,0.08);
+
+  --warning-bg:     #fdf6e2;
+  --warning-border: #e2d5b6;
+  --warning-text:   #8f6b00;
 }
 
 /* ── Nord theme overrides ── */
@@ -111,6 +128,10 @@
 
   --glass-bg:     rgba(46,52,64,0.8);
   --glass-border: rgba(216,222,233,0.05);
+
+  --warning-bg:     rgba(235,203,139,0.08);
+  --warning-border: rgba(235,203,139,0.18);
+  --warning-text:   #ebcb8b;
 }
 
 /* ── Nika theme overrides (deus do sol — sol da meia-noite) ── */
@@ -132,6 +153,10 @@
 
   --glass-bg:     rgba(31,24,16,0.82);
   --glass-border: rgba(255,200,120,0.08);
+
+  --warning-bg:     rgba(245,158,11,0.08);
+  --warning-border: rgba(245,158,11,0.18);
+  --warning-text:   #d9c4a0;
 }
 
 /* ── Nika Light theme overrides (aurora dourada — amanhecer) ── */
@@ -147,6 +172,10 @@
   --tx-secondary: #6b5530;
   --tx-muted:     #9c8456;
   --tx-faint:     #c8b48a;
+
+  --warning-bg:     #faf0db;
+  --warning-border: #c8b48a;
+  --warning-text:   #6b5530;
 
   --line:        #ecdcc0;
   --line-subtle: rgba(236,220,192,0.6);

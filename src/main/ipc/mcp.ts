@@ -2,6 +2,7 @@ import { app, ipcMain } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { loadCustomMcps, saveCustomMcps, parseFlexibleMcpJson } from './mcp-custom'
+import { callIluminMcpTool } from './mcpRunner'
 
 const getMcpDbPath = () => path.join(app.getPath('userData'), 'nika_mcp.json')
 const getProjectsDbPath = () => path.join(app.getPath('userData'), 'nika_projects.json')
@@ -234,5 +235,19 @@ export function registerMcpHandlers() {
       return { success: true }
     }
     return { success: false, error: 'MCP customizado não encontrado.' }
+  })
+
+  ipcMain.handle('mcp:call-ilumin-tool', async (_, { toolName, argumentsObj }: { toolName: string; argumentsObj?: any }) => {
+    const state = loadMcpState()
+    const iluminConfig = state['IluminMCP']
+    if (!iluminConfig || !iluminConfig.enabled || !iluminConfig.apiKey) {
+      return { success: false, error: 'O IluminMCP não está habilitado ou a API Key não foi configurada.' }
+    }
+    try {
+      const result = await callIluminMcpTool(iluminConfig.apiKey, toolName, argumentsObj)
+      return { success: true, result }
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Erro desconhecido ao executar a ferramenta.' }
+    }
   })
 }

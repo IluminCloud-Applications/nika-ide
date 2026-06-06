@@ -33,6 +33,7 @@ declare global {
         getCustomMcps: () => Promise<Record<string, any>>
         saveCustomMcp: (details: { id: string; name?: string; configText: string; enabled?: boolean }) => Promise<{ success: boolean; error?: string; mcp?: any }>
         deleteCustomMcp: (mcpId: string) => Promise<{ success: boolean; error?: string }>
+        callIluminTool: (toolName: string, argumentsObj?: any) => Promise<{ success: boolean; result?: any; error?: string }>
       }
       settings: {
         get: () => Promise<{ workspacePath?: string }>
@@ -124,7 +125,7 @@ declare global {
         delete: (id: string) => Promise<{ success: boolean }>
       }
       docs: {
-        list: () => Promise<Array<{ slug: string; name: string; description: string; updatedAt: string }>>
+        list: () => Promise<Array<{ slug: string; name: string; description: string; content: string; updatedAt: string }>>
         get: (slug: string) => Promise<{ slug: string; name: string; description: string; content: string } | null>
         save: (doc: any) => Promise<{ success: boolean; slug: string }>
         delete: (slug: string) => Promise<{ success: boolean }>
@@ -214,6 +215,13 @@ declare global {
           error?: string
         }>
         smartPrune: () => Promise<{ success: boolean; message?: string; details?: string[]; error?: string }>
+      }
+      tunnel: {
+        status: () => Promise<{ running: boolean; url: string | null; containerId: string | null; error: string | null }>
+        start: (port: number, projectPath?: string) => Promise<{ success: boolean; containerId?: string; error?: string }>
+        stop: () => Promise<{ success: boolean; error?: string }>
+        getLogs: () => Promise<{ success: boolean; logs: string }>
+        onState: (cb: (state: { running: boolean; url: string | null; containerId: string | null; error: string | null }) => void) => () => void
       }
     }
   }

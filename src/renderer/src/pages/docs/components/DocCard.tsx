@@ -12,7 +12,7 @@ interface DocCardProps {
 const actionClass = 'p-1.5 rounded-lg border transition flex items-center justify-center btn-ghost'
 
 export default function DocCard({ doc, onEdit, onDelete, onView }: DocCardProps) {
-  const wordCount = doc.content.trim().split(/\s+/).length
+  const wordCount = doc.content ? doc.content.trim().split(/\s+/).length : 0
 
   return (
     <ItemCard>

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, Palette, User, Lock, Share2, Save } from 'lucide-react'
+import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, Palette, User, Lock, Share2, Save, CloudUpload } from 'lucide-react'
 import { Project } from '../../App'
 
 import FileExplorer from './components/FileExplorer'
@@ -12,6 +12,7 @@ import InspectorPanel from './components/InspectorToast'
 import QuickPromptsPanel from './components/QuickPromptsPanel'
 import GitHistoryModal from '../projects/components/GitHistoryModal'
 import SaveVersionModal from './components/SaveVersionModal'
+import PublishModal from './components/PublishModal'
 import KanbanBoard from './components/tasks/KanbanBoard'
 import DatabasePanel from './components/database'
 import SystemPanel from './components/system'
@@ -67,6 +68,14 @@ export default function DashboardPage({
   const [saveVersionOpen, setSaveVersionOpen] = useState(false)
   const [savingVersion, setSavingVersion]     = useState(false)
   const [explorerKey, setExplorerKey]         = useState(0)
+  const [isIluminEnabled, setIsIluminEnabled] = useState(false)
+  const [publishModalOpen, setPublishModalOpen] = useState(false)
+
+  useEffect(() => {
+    window.api.mcp.getState()
+      .then((state) => setIsIluminEnabled(!!state['IluminMCP']?.enabled))
+      .catch(() => setIsIluminEnabled(false))
+  }, [])
   const [codePanelKey, setCodePanelKey]       = useState(0)
   const [gitStatusMsg, setGitStatusMsg]       = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null)
 
@@ -600,6 +609,16 @@ export default function DashboardPage({
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
+          {isIluminEnabled && (
+            <button
+              onClick={() => setPublishModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 cursor-pointer"
+              title="Publicar na Ilumin Cloud"
+            >
+              <CloudUpload className="w-3.5 h-3.5" />
+              Publicar
+            </button>
+          )}
           <button
             onClick={handleToggleRun}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-200 ${
@@ -660,6 +679,7 @@ export default function DashboardPage({
           >
             <Save className="w-3.5 h-3.5" />
           </button>
+
 
           <button
             onClick={() => setDrawerVisible(!drawerVisible)}
@@ -1001,6 +1021,12 @@ export default function DashboardPage({
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
         localPort={5177}
+        projectPath={project.path}
+      />
+
+      <PublishModal
+        isOpen={publishModalOpen}
+        onClose={() => setPublishModalOpen(false)}
         projectPath={project.path}
       />
 

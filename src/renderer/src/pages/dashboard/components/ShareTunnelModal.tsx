@@ -27,7 +27,6 @@ export default function ShareTunnelModal({ isOpen, onClose, localPort = DEFAULT_
   const [copied, setCopied]     = useState(false)
   const [logs, setLogs]         = useState<string>('')
   const [showLogs, setShowLogs] = useState(false)
-  const [polling, setPolling]   = useState(false)
   const pollRef                 = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -44,17 +43,14 @@ export default function ShareTunnelModal({ isOpen, onClose, localPort = DEFAULT_
   // Poll status while running but URL not yet available
   useEffect(() => {
     if (state.running && !state.url && !state.error) {
-      setPolling(true)
       pollRef.current = setInterval(async () => {
         const s = await window.api.tunnel.status()
         setState(s)
         if (s.url || s.error) {
           clearInterval(pollRef.current!)
-          setPolling(false)
         }
       }, 2000)
     } else {
-      setPolling(false)
       if (pollRef.current) clearInterval(pollRef.current)
     }
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
@@ -65,7 +61,7 @@ export default function ShareTunnelModal({ isOpen, onClose, localPort = DEFAULT_
     setState(prev => ({ ...prev, error: null, url: null }))
     const res = await window.api.tunnel.start(localPort, projectPath)
     if (!res.success) {
-      setState(prev => ({ ...prev, error: res.error, running: false }))
+      setState(prev => ({ ...prev, error: res.error || null, running: false }))
     }
     setLoading(false)
   }

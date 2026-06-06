@@ -38,10 +38,11 @@ function toSlug(name: string): string {
 
 export function registerDocsHandlers() {
   ipcMain.handle('docs:list', () => {
-    return loadDocs().map(({ slug, name, description, updatedAt }) => ({
+    return loadDocs().map(({ slug, name, description, content, updatedAt }) => ({
       slug,
       name,
       description,
+      content,
       updatedAt
     }))
   })

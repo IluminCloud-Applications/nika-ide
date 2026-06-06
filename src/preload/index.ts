@@ -48,7 +48,9 @@ contextBridge.exposeInMainWorld('api', {
     saveCustomMcp: (details: { id: string; name?: string; configText: string; enabled?: boolean }) =>
       ipcRenderer.invoke('mcp:save-custom-mcp', details),
     deleteCustomMcp: (mcpId: string) =>
-      ipcRenderer.invoke('mcp:delete-custom-mcp', { mcpId })
+      ipcRenderer.invoke('mcp:delete-custom-mcp', { mcpId }),
+    callIluminTool: (toolName: string, argumentsObj?: any) =>
+      ipcRenderer.invoke('mcp:call-ilumin-tool', { toolName, argumentsObj })
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
