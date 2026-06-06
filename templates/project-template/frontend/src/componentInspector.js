@@ -128,6 +128,56 @@ function findFiberInDom(startEl) {
   return null
 }
 
+/**
+ * Sobe no DOM procurando o atributo `data-nikasrc="<arquivo>:<linha>"`,
+ * carimbado pelo plugin Babel (vite.config.js) em DEV.
+ * Fonte primária de origem — o React 19 removeu `fiber._debugSource`.
+ */
+function getSourceFromDom(startEl) {
+  let node = startEl
+  while (node && node.nodeType === 1 && node !== document.documentElement) {
+    const raw = node.getAttribute && node.getAttribute('data-nikasrc')
+    if (raw) {
+      const i = raw.lastIndexOf(':')
+      const fileName = i >= 0 ? raw.slice(0, i) : raw
+      if (isUserFile(fileName)) {
+        const lineNumber = i >= 0 ? (parseInt(raw.slice(i + 1), 10) || null) : null
+        return { fileName, lineNumber, domNode: node }
+      }
+    }
+    node = node.parentElement
+  }
+  return null
+}
+
+/**
+ * Resolve o alvo do inspetor a partir do elemento sob o cursor.
+ * Usa data-nikasrc (DOM) como fonte primária e o fiber como fallback (React ≤ 18).
+ */
+function getOuterHTML(el) {
+  if (!el) return null
+  const maxLen = 2000
+  let html = el.outerHTML
+  if (html.length > maxLen) {
+    const clone = el.cloneNode(false)
+    html = clone.outerHTML.replace('></', '>...</')
+  }
+  return html
+}
+
+function resolveTarget(el) {
+  const src   = getSourceFromDom(el)
+  const found = findFiberInDom(el)
+  const fileName = src ? src.fileName : (found ? getFileNameFromFiber(found.fiber) : null)
+  const finalFileName = fileName || 'Desconhecido'
+  return {
+    fileName:      finalFileName,
+    lineNumber:    src ? src.lineNumber : (found ? getLineNumberFromFiber(found.fiber) : null),
+    domNode:       src ? src.domNode    : (found ? found.domNode : el),
+    componentName: found ? getComponentName(found.fiber) : null,
+  }
+}
+
 // ─── Overlay visual ───────────────────────────────────────────────────────────
 
 function ensureOverlay() {
@@ -205,50 +255,37 @@ function handleMouseMove(x, y) {
   if (!el || el === document.body || el === document.documentElement) {
     hideOverlay(); return
   }
-  const found = findFiberInDom(el)
-  if (!found) { hideOverlay(); return }
+  const t = resolveTarget(el)
+  if (!t) { hideOverlay(); return }
 
-  const fileName      = getFileNameFromFiber(found.fiber)
-  if (!fileName) { hideOverlay(); return }
-
-  const componentName = getComponentName(found.fiber)
-  const tagName       = found.domNode.tagName?.toLowerCase() || ''
-  const rect          = found.domNode.getBoundingClientRect()
+  const tagName = t.domNode.tagName?.toLowerCase() || ''
+  const rect    = t.domNode.getBoundingClientRect()
 
   // Badge: "ComponentName > <tag>" ou só o arquivo
-  const label = componentName
-    ? `${componentName} › <${tagName}>`
-    : `${fileName.split('/').slice(-2).join('/')} › <${tagName}>`
+  const label = t.componentName
+    ? `${t.componentName} › <${tagName}>`
+    : (t.fileName !== 'Desconhecido' ? `${t.fileName.split('/').slice(-2).join('/')} › <${tagName}>` : `<${tagName}>`)
 
   showHighlight(rect, label)
 }
 
 function handleClick(x, y) {
-  if (!active) return
+  if (!active) return null
   const el = elementAt(x, y)
-  if (!el) return
+  if (!el) return null
 
-  const found = findFiberInDom(el)
-  if (!found) {
-    window.parent.postMessage({ type: '__LS_INSPECTOR_NO_SOURCE__' }, '*')
-    return
+  const t = resolveTarget(el)
+
+  return {
+    type:          'found',
+    fileName:      t.fileName,
+    lineNumber:    t.lineNumber,
+    componentName: t.componentName,
+    tagName:       t.domNode.tagName?.toLowerCase() || null,
+    visibleText:   getVisibleText(t.domNode),
+    cssClasses:    getRelevantClasses(t.domNode),
+    htmlContent:   getOuterHTML(t.domNode),
   }
-
-  const fileName = getFileNameFromFiber(found.fiber)
-  if (!fileName) {
-    window.parent.postMessage({ type: '__LS_INSPECTOR_NO_SOURCE__' }, '*')
-    return
-  }
-
-  window.parent.postMessage({
-    type:          '__LS_INSPECTOR_CLICK__',
-    fileName:      fileName,
-    lineNumber:    getLineNumberFromFiber(found.fiber),
-    componentName: getComponentName(found.fiber),
-    tagName:       found.domNode.tagName?.toLowerCase() || null,
-    visibleText:   getVisibleText(found.domNode),
-    cssClasses:    getRelevantClasses(found.domNode),
-  }, '*')
 }
 
 // ─── Enable / Disable ────────────────────────────────────────────────────────
@@ -264,7 +301,11 @@ function disable() {
   destroyOverlay()
 }
 
-// ─── Bridge ──────────────────────────────────────────────────────────────────
+// ─── API exposta para o Nika IDE (via executeJavaScript) ─────────────────────
+
+window.__nikainspector = { enable, disable, handleMouseMove, handleClick }
+
+// ─── Bridge legado (fallback via postMessage / preload) ──────────────────────
 
 window.addEventListener('message', (e) => {
   if (!e.data?.type) return

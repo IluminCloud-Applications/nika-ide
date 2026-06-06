@@ -61,6 +61,102 @@ async function wait(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/**
+ * Copia o componentInspector.js do template para o projeto (idempotente).
+ * Garante que todo projeto tenha a versão mais recente do inspector.
+ */
+function syncInspectorFile(frontendDir: string) {
+  try {
+    const templateFile = path.join(__dirname, '../../templates/project-template/frontend/src/componentInspector.js')
+    const targetFile = path.join(frontendDir, 'src', 'componentInspector.js')
+
+    if (!fs.existsSync(templateFile)) return
+
+    // Sempre sobrescreve para garantir versão atualizada
+    const srcDir = path.join(frontendDir, 'src')
+    if (!fs.existsSync(srcDir)) fs.mkdirSync(srcDir, { recursive: true })
+    fs.copyFileSync(templateFile, targetFile)
+
+    // Garante que main.jsx/tsx importa o inspector em DEV
+    ensureInspectorImport(srcDir)
+
+    // Garante que o vite.config emite data-nikasrc (origem dos elementos) p/ o inspetor
+    ensureViteSourcePlugin(frontendDir)
+  } catch (err) {
+    console.warn('[runner] Falha ao sincronizar componentInspector:', (err as Error)?.message)
+  }
+}
+
+/**
+ * Injeta (de forma idempotente) o plugin Babel `nikaSourceTagger` no vite.config
+ * do projeto. Ele carimba `data-nikasrc="<arquivo>:<linha>"` nos elementos JSX
+ * em DEV — fonte de origem usada pelo inspetor (o React 19 removeu _debugSource).
+ */
+function ensureViteSourcePlugin(frontendDir: string) {
+  try {
+    const cfgFile = ['vite.config.js', 'vite.config.mjs', 'vite.config.ts']
+      .map(n => path.join(frontendDir, n))
+      .find(f => fs.existsSync(f))
+    if (!cfgFile) return
+
+    let content = fs.readFileSync(cfgFile, 'utf-8')
+    if (content.includes('nikaSourceTagger')) return // já aplicado
+
+    // Conecta o plugin no react(). Suporta react() vazio e react({ ...opts }).
+    let wired = content
+    if (/react\(\s*\)/.test(wired)) {
+      wired = wired.replace(/react\(\s*\)/, "react({ babel: { plugins: [nikaSourceTagger] } })")
+    } else if (/react\(\s*\{/.test(wired) && !/babel\s*:/.test(wired)) {
+      wired = wired.replace(/react\(\s*\{/, "react({ babel: { plugins: [nikaSourceTagger] }, ")
+    } else {
+      return // formato não reconhecido — não arrisca quebrar o config do usuário
+    }
+    if (wired === content) return
+
+    const pluginDef = `
+// [Nika] Carimba data-nikasrc="<arquivo>:<linha>" nos elementos JSX em DEV (inspetor).
+function nikaSourceTagger({ types: t }) {
+  return {
+    name: 'nika-source-tagger',
+    visitor: {
+      JSXOpeningElement(p, state) {
+        if (process.env.NODE_ENV === 'production') return
+        const node = p.node
+        if (!node.loc || node.name.type !== 'JSXIdentifier') return
+        const tag = node.name.name
+        if (tag[0] !== tag[0].toLowerCase() || tag === 'Fragment') return
+        if (node.attributes.some(a => a.type === 'JSXAttribute' && a.name && a.name.name === 'data-nikasrc')) return
+        node.attributes.push(t.jsxAttribute(t.jsxIdentifier('data-nikasrc'), t.stringLiteral((state.filename || '') + ':' + node.loc.start.line)))
+      }
+    }
+  }
+}
+`
+    // Insere a definição do plugin logo antes do export default.
+    const exportIdx = wired.indexOf('export default')
+    if (exportIdx === -1) return
+    const finalContent = wired.slice(0, exportIdx) + pluginDef + '\n' + wired.slice(exportIdx)
+    fs.writeFileSync(cfgFile, finalContent)
+  } catch (err) {
+    console.warn('[runner] Falha ao injetar plugin de origem no vite.config:', (err as Error)?.message)
+  }
+}
+
+/** Garante que main.jsx/tsx importa componentInspector em DEV mode */
+function ensureInspectorImport(srcDir: string) {
+  const candidates = ['main.jsx', 'main.tsx']
+  for (const name of candidates) {
+    const mainFile = path.join(srcDir, name)
+    if (!fs.existsSync(mainFile)) continue
+    const content = fs.readFileSync(mainFile, 'utf-8')
+    if (content.includes('componentInspector')) return // Já tem
+    // Adiciona o import condicional no topo do arquivo
+    const importLine = `if (import.meta.env.DEV) { import('./componentInspector.js') }\n`
+    fs.writeFileSync(mainFile, importLine + content)
+    return
+  }
+}
+
 export function registerRunnerHandlers() {
   ipcMain.handle('runner:start', async (event, { projectPath }: { projectPath: string }) => {
     // Para qualquer processo existente antes de iniciar
@@ -79,6 +175,9 @@ export function registerRunnerHandlers() {
     const backendDir  = path.join(projectPath, 'backend')
 
     if (fs.existsSync(frontendDir)) {
+      // Sincroniza o componentInspector.js do template para o projeto
+      syncInspectorFile(frontendDir)
+
       sendToWindow(event, 'runner:log', { label: 'frontend', data: '[SYSTEM] Instalando dependências (npm install)...\n' })
       const npmInstall = spawnProcess('npm', ['install', '--prefer-offline'], frontendDir, event, 'frontend')
       processes.push(npmInstall)

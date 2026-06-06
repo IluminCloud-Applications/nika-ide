@@ -77,7 +77,9 @@ const COLOR_FIELDS: { key: string; label: string }[] = [
   { key: '--accent', label: 'Destaque (Hover)' },
   { key: '--muted-foreground', label: 'Texto Suave' },
   { key: '--border', label: 'Cor de Bordas' },
-  { key: '--ring', label: 'Foco (Ring)' }
+  { key: '--ring', label: 'Foco (Ring)' },
+  { key: '--scrollbar-thumb', label: 'Scrollbar (Miniatura)' },
+  { key: '--scrollbar-track', label: 'Scrollbar (Trilho)' }
 ]
 
 // IMPORTANTE: definido em escopo de módulo. Se ficasse dentro do componente,
@@ -105,6 +107,7 @@ export default function StudioManualControls({ rootVars, darkVars, isDark, onSav
   const [colors, setColors] = useState<Record<string, string>>({})
   const [radius, setRadius] = useState('0.5rem')
   const [spacing, setSpacing] = useState('1rem')
+  const [scrollbarWidth, setScrollbarWidth] = useState('6px')
   const [savedFlash, setSavedFlash] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const flashTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -118,6 +121,7 @@ export default function StudioManualControls({ rootVars, darkVars, isDark, onSav
     setColors(next)
     if (currentVars['--radius']) setRadius(currentVars['--radius'])
     if (currentVars['--studio-spacing']) setSpacing(currentVars['--studio-spacing'])
+    if (currentVars['--scrollbar-width']) setScrollbarWidth(currentVars['--scrollbar-width'])
   }, [currentVars, isDark])
 
   useEffect(() => () => {
@@ -126,7 +130,7 @@ export default function StudioManualControls({ rootVars, darkVars, isDark, onSav
   }, [])
 
   // Aplica e grava automaticamente (debounce), sem precisar de botão.
-  const scheduleSave = (c: Record<string, string>, r: string, s: string) => {
+  const scheduleSave = (c: Record<string, string>, r: string, s: string, sw: string) => {
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
       const updated: Record<string, string> = {}
@@ -135,6 +139,7 @@ export default function StudioManualControls({ rootVars, darkVars, isDark, onSav
       })
       updated['--radius'] = r
       updated['--studio-spacing'] = s
+      updated['--scrollbar-width'] = sw
       onSave(updated, isDark)
       setSavedFlash(true)
       clearTimeout(flashTimer.current)
@@ -145,17 +150,22 @@ export default function StudioManualControls({ rootVars, darkVars, isDark, onSav
   const setColor = (key: string, v: string) => {
     const next = { ...colors, [key]: v }
     setColors(next)
-    scheduleSave(next, radius, spacing)
+    scheduleSave(next, radius, spacing, scrollbarWidth)
   }
 
   const handleRadius = (v: string) => {
     setRadius(v)
-    scheduleSave(colors, v, spacing)
+    scheduleSave(colors, v, spacing, scrollbarWidth)
   }
 
   const handleSpacing = (v: string) => {
     setSpacing(v)
-    scheduleSave(colors, radius, v)
+    scheduleSave(colors, radius, v, scrollbarWidth)
+  }
+
+  const handleScrollbarWidth = (v: string) => {
+    setScrollbarWidth(v)
+    scheduleSave(colors, radius, spacing, v)
   }
 
   return (
@@ -222,6 +232,23 @@ export default function StudioManualControls({ rootVars, darkVars, isDark, onSav
               step="0.25"
               value={parseFloat(spacing) || 1}
               onChange={e => handleSpacing(`${e.target.value}rem`)}
+              className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            />
+          </div>
+
+          {/* Scrollbar Thickness Slider */}
+          <div className="p-3 rounded-lg bg-[var(--surface-overlay)] border border-[var(--line)] space-y-2">
+            <div className="flex justify-between text-xs font-medium tx-secondary">
+              <span>Espessura da Scrollbar</span>
+              <span className="font-mono text-[10px] text-blue-400">{scrollbarWidth}</span>
+            </div>
+            <input
+              type="range"
+              min="2"
+              max="16"
+              step="1"
+              value={parseInt(scrollbarWidth) || 6}
+              onChange={e => handleScrollbarWidth(`${e.target.value}px`)}
               className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
             />
           </div>

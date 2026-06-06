@@ -72,6 +72,9 @@ export default function StudioDashboard({ project, onBack }: StudioDashboardProp
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
     --studio-spacing: 1rem;
+    --scrollbar-width: 6px;
+    --scrollbar-thumb: 240 5.9% 90%;
+    --scrollbar-track: 0 0% 100%;
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -95,6 +98,9 @@ export default function StudioDashboard({ project, onBack }: StudioDashboardProp
     --ring: 240 4.9% 83.9%;
     --radius: 0.5rem;
     --studio-spacing: 1rem;
+    --scrollbar-width: 6px;
+    --scrollbar-thumb: 240 3.7% 15.9%;
+    --scrollbar-track: 240 10% 3.9%;
   }
 }
 
@@ -104,6 +110,22 @@ export default function StudioDashboard({ project, onBack }: StudioDashboardProp
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-width, 6px);
+    height: var(--scrollbar-width, 6px);
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--scrollbar-track, var(--background)));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--scrollbar-thumb, var(--border)));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
   }
 }`
           await window.api.fs.writeFile(cssPath, initialTemplate)
@@ -132,7 +154,7 @@ export default function StudioDashboard({ project, onBack }: StudioDashboardProp
   }, [project.path, rawCss])
 
   // Tokens que valem para o tema inteiro (não dependem de light/dark).
-  const GLOBAL_KEYS = ['--radius', '--studio-spacing']
+  const GLOBAL_KEYS = ['--radius', '--studio-spacing', '--scrollbar-width']
 
   // Salva alterações manuais no arquivo index.css
   const handleSaveManual = async (updatedVars: Record<string, string>, isDarkMode: boolean) => {

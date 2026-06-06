@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Terminal as TermIcon, X, ExternalLink } from 'lucide-react'
+import { X, ExternalLink } from 'lucide-react'
 import '@xterm/xterm/css/xterm.css'
+import AgentSelector from './AgentSelector'
 import DrawerTabs from './terminal/TerminalTabs'
 import NotepadView from './terminal/NotepadView'
 import ResizeHandle from './terminal/ResizeHandle'
@@ -92,35 +93,34 @@ export default function TerminalDrawer({
       >
         {/* Header */}
         <div className="editor-terminal-header border-b" style={{ borderColor: 'var(--line)' }}>
-          <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-            <TermIcon className="w-3.5 h-3.5 tx-muted flex-shrink-0" />
-            
-            {projectsWithSessions.length > 1 && onProjectPathChange ? (
+          <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-2">
+            {/* Seletor de Agente de IA — ocupa o lugar do título do terminal */}
+            <AgentSelector projectPath={projectPath} />
+
+            {projectsWithSessions.length > 1 && onProjectPathChange && (
               // Seletor de projetos em abas compactas se houver múltiplos
-              <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar py-0.5">
-                {projectsWithSessions.map(proj => {
-                  const isActive = proj.path === projectPath
-                  return (
-                    <button
-                      key={proj.path}
-                      onClick={() => onProjectPathChange(proj.path)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-semibold transition whitespace-nowrap ${
-                        isActive
-                          ? 'bg-blue-600/10 border border-blue-500/30 text-blue-400 font-semibold'
-                          : 'bg-transparent border border-transparent text-neutral-400 hover:text-neutral-200'
-                      }`}
-                      title={proj.name}
-                    >
-                      {proj.name}
-                    </button>
-                  )
-                })}
-              </div>
-            ) : (
-              // Caso contrário, mostra apenas o nome do projeto correspondente
-              <span className="text-[10px] font-bold tx-secondary truncate tracking-wide uppercase">
-                {projectsWithSessions.find(p => p.path === projectPath)?.name || 'Terminal'}
-              </span>
+              <>
+                <div className="w-px h-5 flex-shrink-0" style={{ backgroundColor: 'var(--line)' }} />
+                <div className="flex items-center gap-1.5 min-w-0 overflow-x-auto no-scrollbar py-0.5">
+                  {projectsWithSessions.map(proj => {
+                    const isActive = proj.path === projectPath
+                    return (
+                      <button
+                        key={proj.path}
+                        onClick={() => onProjectPathChange(proj.path)}
+                        className={`px-2 py-0.5 rounded text-[10px] font-semibold transition whitespace-nowrap ${
+                          isActive
+                            ? 'bg-blue-600/10 border border-blue-500/30 text-blue-400 font-semibold'
+                            : 'bg-transparent border border-transparent text-neutral-400 hover:text-neutral-200'
+                        }`}
+                        title={proj.name}
+                      >
+                        {proj.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </>
             )}
           </div>
 

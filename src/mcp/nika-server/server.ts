@@ -11,7 +11,7 @@ import { callBridge, checkUrlOnline, checkUrlOffline } from './utils'
 import { gitCommit } from './git-helper'
 import { sqlExecute } from './db-helper'
 import { checkApp } from './checker'
-import { createPrompt, createAgent, createMcp, createSkill, listDocs, getDoc } from './creator'
+import { createPrompt, createAgent, createMcp, createSkill, listDocs, getDoc, createDoc } from './creator'
 
 export class NikaMCPServer {
   private server: Server
@@ -174,6 +174,11 @@ export class NikaMCPServer {
 
         if (name === 'get_doc') {
           const result = getDoc(args.slug)
+          return { content: [{ type: 'text', text: result }] }
+        }
+
+        if (name === 'create_doc') {
+          const result = createDoc(args)
           return { content: [{ type: 'text', text: result }] }
         }
 

@@ -77,6 +77,7 @@ declare global {
         installWithAI: (missingToolIds: string[], cliId?: string) => Promise<{ success: boolean; reason?: string }>
         getInstallPrompt: (missingToolIds: string[]) => Promise<string>
         getWebviewPreloadPath: () => Promise<string>
+        webviewPreloadPath: string
         getInstallInfo: (toolId: string) => Promise<{
           canAutoInstall: boolean
           command?: string | null

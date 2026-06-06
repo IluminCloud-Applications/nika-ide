@@ -1,5 +1,11 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+// Lê o preload path do webview passado como additionalArguments (síncrono, sem IPC)
+const webviewPreloadArg = process.argv.find(a => a.startsWith('--webview-preload='))
+const WEBVIEW_PRELOAD_PATH = webviewPreloadArg
+  ? 'file://' + webviewPreloadArg.replace('--webview-preload=', '')
+  : ''
+
 interface ProjectDetails {
   name: string
   description: string
@@ -137,7 +143,10 @@ contextBridge.exposeInMainWorld('api', {
     openPath: (path: string) => ipcRenderer.invoke('system:open-path', path),
     installWithAI: (missingToolIds: string[], cliId?: string) => ipcRenderer.invoke('system:install-with-ai', missingToolIds, cliId),
     getInstallPrompt: (missingToolIds: string[]) => ipcRenderer.invoke('system:get-install-prompt', missingToolIds),
-    getWebviewPreloadPath: () => ipcRenderer.invoke('system:get-webview-preload-path'),
+    // Síncrono — path resolvido antes do renderer iniciar (via additionalArguments)
+    webviewPreloadPath: WEBVIEW_PRELOAD_PATH,
+    // Mantido por compatibilidade (legado)
+    getWebviewPreloadPath: () => Promise.resolve(WEBVIEW_PRELOAD_PATH),
     getInstallInfo: (toolId: string) => ipcRenderer.invoke('system:get-install-info', toolId),
     getAllInstallInfo: () => ipcRenderer.invoke('system:get-all-install-info'),
     autoInstallTool: (toolId: string) => ipcRenderer.invoke('system:auto-install-tool', toolId),

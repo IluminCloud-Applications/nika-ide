@@ -3,7 +3,6 @@ import { ArrowLeft, Play, Square, Terminal as TermIcon, History as HistoryIcon, 
 import { Project } from '../../App'
 
 import FileExplorer from './components/FileExplorer'
-import AgentSelector from './components/AgentSelector'
 import StatusBar from './components/StatusBar'
 import PreviewBar, { ViewportMode } from './components/PreviewBar'
 import CenterTabs, { CenterView } from './components/CenterTabs'
@@ -11,8 +10,6 @@ import CodePanel from './components/CodePanel'
 import RunnerLogsPanel from './components/RunnerLogsPanel'
 import InspectorPanel from './components/InspectorToast'
 import QuickPromptsPanel from './components/QuickPromptsPanel'
-import { Agent } from '../agents/types'
-import { DEFAULT_AGENTS } from '../agents/utils/defaultAgents'
 import GitHistoryModal from '../projects/components/GitHistoryModal'
 import SaveVersionModal from './components/SaveVersionModal'
 import KanbanBoard from './components/tasks/KanbanBoard'
@@ -27,6 +24,7 @@ import { useTerminalContext } from '../../context/TerminalContext'
 import ProjectTabs from './components/ProjectTabs'
 import EnvDrawer from './components/EnvDrawer'
 import ShareTunnelModal from './components/ShareTunnelModal'
+import { INSPECTOR_CODE } from './utils/inspectorCode'
 
 export default function DashboardPage({
   project,
@@ -48,31 +46,10 @@ export default function DashboardPage({
   const { drawerVisible, setDrawerVisible } = useTerminalContext()
   const [sidebarOpen, setSidebarOpen]         = useState(true)
   const [centerView, setCenterView]           = useState<CenterView>('preview')
-  const [activeAgent, setActiveAgent]         = useState<Agent>(DEFAULT_AGENTS[0])
   const [userModalOpen, setUserModalOpen]       = useState(false)
   const [designModalOpen, setDesignModalOpen]   = useState(false)
   const [envDrawerOpen, setEnvDrawerOpen]       = useState(false)
   const [shareModalOpen, setShareModalOpen]     = useState(false)
-
-
-  useEffect(() => {
-    if (!project?.path) return
-    const defaultAgent = DEFAULT_AGENTS.find(a => a.id === 'padrao') || DEFAULT_AGENTS[0]
-    const resetToDefault = async () => {
-      try {
-        const geminiPath = `${project.path}/GEMINI.md`
-        const claudePath = `${project.path}/CLAUDE.md`
-        const agentsPath = `${project.path}/AGENTS.md`
-        await window.api.fs.writeFile(geminiPath, defaultAgent.systemInstructions)
-        await window.api.fs.writeFile(claudePath, defaultAgent.systemInstructions)
-        await window.api.fs.writeFile(agentsPath, defaultAgent.systemInstructions)
-        setActiveAgent(defaultAgent)
-      } catch (err) {
-        console.error('Erro ao resetar para o agente padrão:', err)
-      }
-    }
-    resetToDefault()
-  }, [project?.path])
 
   // Atalho Ctrl+B para alternar a barra lateral
   useEffect(() => {
@@ -212,10 +189,19 @@ export default function DashboardPage({
     tagName: string | null
     visibleText: string | null
     cssClasses: string | null
+    htmlContent: string | null
   } | null>(null)
   const [showIconPicker, setShowIconPicker]   = useState(false)
-  const [webviewPreloadPath, setWebviewPreloadPath] = useState('')
+  const [webviewEl, setWebviewEl]             = useState<any>(null)
   const iframeRef = useRef<any>(null)
+  // Path do preload do webview resolvido de forma síncrona (sem IPC)
+  const webviewPreloadPath = window.api.system.webviewPreloadPath
+
+  // Ref callback: atualiza estado quando webview monta/desmonta
+  const webviewRefCallback = useCallback((el: any) => {
+    iframeRef.current = el
+    setWebviewEl(el)
+  }, [])
 
   // ─── Pré-visualização de Design (paleta) ──────────────────────────────────
   // Paleta em prévia no momento (overlay ao vivo, sem gravar em disco). Null = sem prévia.
@@ -295,66 +281,41 @@ export default function DashboardPage({
     }
   }, [isRunning, previewReady, previewPalette])
 
-  useEffect(() => {
-    window.api.system.getWebviewPreloadPath().then((path: string) => {
-      const formatted = path.startsWith('file://') ? path : `file://${path}`
-      setWebviewPreloadPath(formatted)
-    })
+  // Executa JS diretamente dentro do webview (mais confiável que IPC bridge)
+  const execInWebview = useCallback((code: string): Promise<any> => {
+    const wv: any = iframeRef.current
+    if (!wv || typeof wv.executeJavaScript !== 'function') return Promise.resolve(null)
+    return wv.executeJavaScript(code, true).catch(() => null)
   }, [])
-
-  // Envia mensagem para dentro do iframe / webview
-  const sendToIframe = useCallback((type: string, extra?: object) => {
-    if (iframeRef.current && 'send' in iframeRef.current) {
-      iframeRef.current.send('webview-postmessage', { type, ...extra })
-    } else {
-      iframeRef.current?.contentWindow?.postMessage({ type, ...extra }, '*')
-    }
-  }, [])
-
-  // Escuta mensagens vindas do iframe
-  useEffect(() => {
-    const onMessage = (e: MessageEvent) => {
-      if (e.data?.type === '__LS_INSPECTOR_CLICK__') {
-        setInspectorContext({
-          fileName:      e.data.fileName,
-          lineNumber:    e.data.lineNumber ?? null,
-          componentName: e.data.componentName ?? null,
-          tagName:       e.data.tagName ?? null,
-          visibleText:   e.data.visibleText ?? null,
-          cssClasses:    e.data.cssClasses ?? null,
-        })
-        setInspectorActive(false)
-        sendToIframe('__LS_INSPECTOR_DISABLE__')
-      }
-      if (e.data?.type === '__LS_INSPECTOR_DEACTIVATE__') {
-        setInspectorActive(false)
-      }
-      if (e.data?.type === '__LS_INSPECTOR_NO_SOURCE__') {
-        const el = document.getElementById('__ls_inspector_banner__')
-        if (el) { el.classList.add('animate-bounce'); setTimeout(() => el.classList.remove('animate-bounce'), 600) }
-      }
-    }
-    window.addEventListener('message', onMessage)
-    return () => window.removeEventListener('message', onMessage)
-  }, [sendToIframe])
 
   // ESC desativa o inspector
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && inspectorActive) {
         setInspectorActive(false)
-        sendToIframe('__LS_INSPECTOR_DISABLE__')
+        execInWebview('window.__nikainspector?.disable()')
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [inspectorActive, sendToIframe])
+  }, [inspectorActive, execInWebview])
 
-  const toggleInspector = () => {
+  // Garante que o inspector está injetado no webview
+  const ensureInspectorInjected = useCallback(async () => {
+    const exists = await execInWebview('typeof window.__nikainspector !== "undefined"')
+    if (!exists) await execInWebview(INSPECTOR_CODE)
+  }, [execInWebview])
+
+  const toggleInspector = async () => {
     const next = !inspectorActive
     setInspectorActive(next)
-    sendToIframe(next ? '__LS_INSPECTOR_ENABLE__' : '__LS_INSPECTOR_DISABLE__')
-    if (next) setInspectorContext(null)
+    if (next) {
+      await ensureInspectorInjected()
+      execInWebview('window.__nikainspector?.enable()')
+      setInspectorContext(null)
+    } else {
+      execInWebview('window.__nikainspector?.disable()')
+    }
   }
 
   // Altera a classe de ícone fisicamente no arquivo
@@ -405,32 +366,51 @@ export default function DashboardPage({
   }
 
   // Re-envia estado ao iframe quando ele recarrega
-  const handleIframeLoad = useCallback(() => {
-    if (inspectorActive) sendToIframe('__LS_INSPECTOR_ENABLE__')
+  const handleIframeLoad = useCallback(async () => {
+    if (inspectorActive) {
+      await ensureInspectorInjected()
+      execInWebview('window.__nikainspector?.enable()')
+    }
     reinjectPreviewOnLoad()
-  }, [inspectorActive, sendToIframe, reinjectPreviewOnLoad])
+  }, [inspectorActive, execInWebview, ensureInspectorInjected, reinjectPreviewOnLoad])
 
-  // Encaminha mousemove do overlay para o iframe
+  // Encaminha mousemove do overlay para o webview via executeJavaScript
   const handleOverlayMouseMove = useCallback((e: React.MouseEvent) => {
-    const iframe = iframeRef.current
-    if (!iframe) return
-    const rect = iframe.getBoundingClientRect()
-    sendToIframe('__LS_INSPECTOR_MOUSEMOVE__', {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    })
-  }, [sendToIframe])
+    const wv = iframeRef.current
+    if (!wv) return
+    const rect = wv.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    execInWebview(`window.__nikainspector?.handleMouseMove(${x}, ${y})`)
+  }, [execInWebview])
 
-  // Encaminha clique do overlay para o iframe
-  const handleOverlayClick = useCallback((e: React.MouseEvent) => {
-    const iframe = iframeRef.current
-    if (!iframe) return
-    const rect = iframe.getBoundingClientRect()
-    sendToIframe('__LS_INSPECTOR_CLICK_AT__', {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    })
-  }, [sendToIframe])
+  // Encaminha clique do overlay e lê o resultado direto
+  const handleOverlayClick = useCallback(async (e: React.MouseEvent) => {
+    const wv = iframeRef.current
+    if (!wv) return
+    const rect = wv.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    const result = await execInWebview(`window.__nikainspector?.handleClick(${x}, ${y})`)
+
+    if (result?.type === 'found') {
+      setInspectorContext({
+        fileName:      result.fileName,
+        lineNumber:    result.lineNumber ?? null,
+        componentName: result.componentName ?? null,
+        tagName:       result.tagName ?? null,
+        visibleText:   result.visibleText ?? null,
+        cssClasses:    result.cssClasses ?? null,
+        htmlContent:   result.htmlContent ?? null,
+      })
+      setInspectorActive(false)
+      execInWebview('window.__nikainspector?.disable()')
+    } else if (result?.type === 'no_source') {
+      const el = document.getElementById('__ls_inspector_banner__')
+      if (el) { el.classList.add('animate-bounce'); setTimeout(() => el.classList.remove('animate-bounce'), 600) }
+    }
+  }, [execInWebview])
 
   const handleToggleRun = async () => {
     if (isRunning) {
@@ -530,19 +510,19 @@ export default function DashboardPage({
 
   // Recarrega o webview quando o viewport muda para aplicar o useragent de forma limpa
   useEffect(() => {
-    if (previewReady) {
+    if (previewReady && webviewEl) {
       handleRefreshPreview()
     }
-  }, [viewport])
+  }, [viewport]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Console e Rede do preview são capturados no processo principal (via CDP do
   // webContents do webview) e bufferizados pelo store devtoolsLogs o tempo todo,
   // independente da aba aberta. Aqui só tratamos o inspector via ipc-message.
 
-  // Mensagens do inspector e dom-ready continuam vindo pelo ipc-message do webview
+  // Mensagens do inspector e dom-ready — depende de webviewEl para rodar
+  // somente quando a webview está de fato montada no DOM.
   useEffect(() => {
-    const webview = iframeRef.current
-    if (!webview || !('addEventListener' in webview)) return
+    if (!webviewEl) return
 
     const handleIpcMessage = (e: any) => {
       if (e.channel === 'webview-message') {
@@ -561,23 +541,18 @@ export default function DashboardPage({
       }
     }
 
-    webview.addEventListener('ipc-message', handleIpcMessage)
-    webview.addEventListener('dom-ready', handleDomReady)
-    webview.addEventListener('did-navigate', handleNavigate)
-    webview.addEventListener('did-navigate-in-page', handleNavigate)
+    webviewEl.addEventListener('ipc-message', handleIpcMessage)
+    webviewEl.addEventListener('dom-ready', handleDomReady)
+    webviewEl.addEventListener('did-navigate', handleNavigate)
+    webviewEl.addEventListener('did-navigate-in-page', handleNavigate)
 
     return () => {
-      try {
-        if (webview && typeof webview.stop === 'function') {
-          webview.stop()
-        }
-      } catch (err) {}
-      webview.removeEventListener('ipc-message', handleIpcMessage)
-      webview.removeEventListener('dom-ready', handleDomReady)
-      webview.removeEventListener('did-navigate', handleNavigate)
-      webview.removeEventListener('did-navigate-in-page', handleNavigate)
+      webviewEl.removeEventListener('ipc-message', handleIpcMessage)
+      webviewEl.removeEventListener('dom-ready', handleDomReady)
+      webviewEl.removeEventListener('did-navigate', handleNavigate)
+      webviewEl.removeEventListener('did-navigate-in-page', handleNavigate)
     }
-  }, [iframeKey, handleIframeLoad, previewReady])
+  }, [webviewEl, handleIframeLoad])
 
   const handleBack = async () => {
     if (diffCommitHash) {
@@ -638,11 +613,6 @@ export default function DashboardPage({
             {isRunning ? 'Parar' : 'Iniciar'}
           </button>
           <div className="divider-y h-5" />
-          <AgentSelector
-            projectPath={project.path}
-            activeAgent={activeAgent}
-            onSelectAgent={setActiveAgent}
-          />
           <button
             onClick={() => setUserModalOpen(!userModalOpen)}
             disabled={!(isRunning && previewReady)}
@@ -774,7 +744,7 @@ export default function DashboardPage({
                             <div className="flex-1 w-full relative overflow-hidden" style={{ backgroundColor: 'var(--surface-overlay)' }}>
                               {/* @ts-ignore */}
                               <webview
-                                ref={iframeRef}
+                                ref={webviewRefCallback}
                                 key={iframeKey}
                                 src={previewUrl}
                                 preload={webviewPreloadPath}
@@ -854,7 +824,7 @@ export default function DashboardPage({
                         >
                           {/* @ts-ignore */}
                           <webview
-                            ref={iframeRef}
+                            ref={webviewRefCallback}
                             key={iframeKey}
                             src={previewUrl}
                             preload={webviewPreloadPath}
@@ -882,6 +852,7 @@ export default function DashboardPage({
                         tagName={inspectorContext.tagName}
                         visibleText={inspectorContext.visibleText}
                         cssClasses={inspectorContext.cssClasses}
+                        htmlContent={inspectorContext.htmlContent}
                         onDismiss={() => setInspectorContext(null)}
                         onChangeIcon={() => setShowIconPicker(true)}
                       />

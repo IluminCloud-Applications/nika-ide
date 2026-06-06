@@ -46,6 +46,8 @@ let mainWindow: BrowserWindow | null = null
 const iconPath = path.join(__dirname, '../../build/icon.png')
 
 function createWindow(): void {
+  const webviewPreloadPath = path.join(__dirname, '../preload/webview.js')
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -61,6 +63,8 @@ function createWindow(): void {
       nodeIntegration: false,
       contextIsolation: true,
       webviewTag: true,
+      // Passa o path do preload do webview como arg acessível de forma síncrona
+      additionalArguments: [`--webview-preload=${webviewPreloadPath}`],
     },
   })
 

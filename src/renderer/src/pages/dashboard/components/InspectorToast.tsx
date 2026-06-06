@@ -7,12 +7,13 @@ interface InspectorPanelProps {
   tagName:       string | null
   visibleText:   string | null
   cssClasses:    string | null
+  htmlContent:   string | null
   onDismiss:     () => void
   onChangeIcon?: () => void
 }
 
 function buildPrompt(userPrompt: string, ctx: Omit<InspectorPanelProps, 'onDismiss'>): string {
-  const relativePath = ctx.fileName.split('/').slice(-4).join('/')
+  const relativePath = ctx.fileName !== 'Desconhecido' ? ctx.fileName.split('/').slice(-4).join('/') : null
   const lines: string[] = []
 
   if (userPrompt.trim()) lines.push(userPrompt.trim(), '')
@@ -25,21 +26,31 @@ function buildPrompt(userPrompt: string, ctx: Omit<InspectorPanelProps, 'onDismi
   if (ctx.visibleText)   lines.push(`**Texto visível:** "${ctx.visibleText}"`)
   if (ctx.cssClasses)    lines.push(`**Classes CSS:** \`${ctx.cssClasses}\``)
 
-  lines.push('')
-  lines.push(`**Arquivo:** \`${relativePath}\``)
-  lines.push(`**Caminho completo:** ${ctx.fileName}`)
+  if (ctx.htmlContent) {
+    lines.push('')
+    lines.push('**Código HTML:**')
+    lines.push('```html')
+    lines.push(ctx.htmlContent)
+    lines.push('```')
+  }
+
+  if (relativePath) {
+    lines.push('')
+    lines.push(`**Arquivo:** \`${relativePath}\``)
+    lines.push(`**Caminho completo:** ${ctx.fileName}`)
+  }
 
   return lines.join('\n')
 }
 
 export default function InspectorPanel({
-  fileName, componentName, tagName, visibleText, cssClasses, onDismiss, onChangeIcon
+  fileName, componentName, tagName, visibleText, cssClasses, htmlContent, onDismiss, onChangeIcon
 }: InspectorPanelProps) {
   const [prompt, setPrompt] = useState('')
   const [copied, setCopied] = useState(false)
   const textareaRef         = useRef<HTMLTextAreaElement>(null)
 
-  const shortName = fileName.split('/').slice(-3).join('/')
+  const shortName = fileName !== 'Desconhecido' ? fileName.split('/').slice(-3).join('/') : 'Elemento do DOM'
   const hasPrompt = prompt.trim().length > 0
 
   useEffect(() => {
@@ -47,7 +58,7 @@ export default function InspectorPanel({
   }, [])
 
   const handleCopy = async () => {
-    const text = buildPrompt(prompt, { fileName, componentName, tagName, visibleText, cssClasses })
+    const text = buildPrompt(prompt, { fileName, componentName, tagName, visibleText, cssClasses, htmlContent })
     try {
       await navigator.clipboard.writeText(text)
       setCopied(true)
@@ -70,7 +81,7 @@ export default function InspectorPanel({
             <FileCode className="w-3.5 h-3.5 text-blue-400" />
           </div>
           <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-[10px] tx-muted">Componente detectado</p>
+            <p className="text-[10px] tx-muted">{fileName !== 'Desconhecido' ? 'Componente detectado' : 'Elemento inspecionado'}</p>
             <p className="text-[11px] font-mono tx-secondary truncate">{shortName}</p>
 
             {/* Tags de contexto */}
@@ -129,7 +140,7 @@ export default function InspectorPanel({
           <div className="mx-4 mb-3 p-2.5 rounded-lg" style={{ backgroundColor: 'var(--surface-base)', border: '1px solid var(--line)' }}>
             <p className="text-[9px] tx-faint mb-1.5 uppercase tracking-wider">Preview do prompt</p>
             <pre className="text-[10px] tx-muted leading-relaxed whitespace-pre-wrap break-all font-mono max-h-20 overflow-y-auto">
-              {buildPrompt(prompt, { fileName, componentName, tagName, visibleText, cssClasses })}
+              {buildPrompt(prompt, { fileName, componentName, tagName, visibleText, cssClasses, htmlContent })}
             </pre>
           </div>
         )}

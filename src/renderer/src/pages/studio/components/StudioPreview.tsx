@@ -176,6 +176,22 @@ export default function StudioPreview({ isDark }: { isDark: boolean }) {
         }
         .studio-alert-text { color: hsl(var(--primary, 0 0% 98%) / 0.8); }
         .studio-text-muted { color: hsl(var(--muted-foreground, 240 5% 64.9%)); }
+
+        /* Custom scrollbar within Studio Preview */
+        .studio-viewport-container ::-webkit-scrollbar {
+          width: var(--scrollbar-width, 6px);
+          height: var(--scrollbar-width, 6px);
+        }
+        .studio-viewport-container ::-webkit-scrollbar-track {
+          background: hsl(var(--scrollbar-track, var(--background)));
+        }
+        .studio-viewport-container ::-webkit-scrollbar-thumb {
+          background: hsl(var(--scrollbar-thumb, var(--border)));
+          border-radius: 9999px;
+        }
+        .studio-viewport-container ::-webkit-scrollbar-thumb:hover {
+          background: hsl(var(--primary));
+        }
       `}</style>
 
       <Navbar />

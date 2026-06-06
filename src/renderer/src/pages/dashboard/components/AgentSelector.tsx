@@ -4,16 +4,18 @@ import { DEFAULT_AGENTS } from '../../agents/utils/defaultAgents'
 
 interface AgentSelectorProps {
   projectPath: string
-  activeAgent: Agent | null
-  onSelectAgent: (agent: Agent) => void
 }
 
-export default function AgentSelector({ projectPath, activeAgent, onSelectAgent }: AgentSelectorProps) {
-  const [agents, setAgents] = useState<Agent[]>([])
+const DEFAULT_AGENT = DEFAULT_AGENTS.find(a => a.id === 'padrao') || DEFAULT_AGENTS[0]
+
+export default function AgentSelector({ projectPath }: AgentSelectorProps) {
+  const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS)
+  const [activeAgent, setActiveAgent] = useState<Agent>(DEFAULT_AGENT)
   const [isOpen, setIsOpen] = useState(false)
   const [expandedAgentId, setExpandedAgentId] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  // Carrega agentes personalizados além dos padrão
   useEffect(() => {
     const loadAgents = async () => {
       try {
@@ -25,6 +27,25 @@ export default function AgentSelector({ projectPath, activeAgent, onSelectAgent 
     }
     loadAgents()
   }, [])
+
+  // Ao abrir/alternar o projeto, restaura o agente persistido (ou o padrão)
+  // e grava as instruções nos arquivos consumidos pelos CLIs de IA.
+  useEffect(() => {
+    if (!projectPath || agents.length === 0) return
+    const savedId = localStorage.getItem(`terminal_active_agent:${projectPath}`)
+    const agent = agents.find(a => a.id === savedId) || DEFAULT_AGENT
+    const applyAgent = async () => {
+      try {
+        await window.api.fs.writeFile(`${projectPath}/GEMINI.md`, agent.systemInstructions)
+        await window.api.fs.writeFile(`${projectPath}/CLAUDE.md`, agent.systemInstructions)
+        await window.api.fs.writeFile(`${projectPath}/AGENTS.md`, agent.systemInstructions)
+        setActiveAgent(agent)
+      } catch (err) {
+        console.error('Erro ao aplicar o agente do projeto:', err)
+      }
+    }
+    applyAgent()
+  }, [projectPath, agents])
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -38,13 +59,11 @@ export default function AgentSelector({ projectPath, activeAgent, onSelectAgent 
 
   const handleAgentClick = async (agent: Agent) => {
     try {
-      const geminiPath = `${projectPath}/GEMINI.md`
-      const claudePath = `${projectPath}/CLAUDE.md`
-      const agentsPath = `${projectPath}/AGENTS.md`
-      await window.api.fs.writeFile(geminiPath, agent.systemInstructions)
-      await window.api.fs.writeFile(claudePath, agent.systemInstructions)
-      await window.api.fs.writeFile(agentsPath, agent.systemInstructions)
-      onSelectAgent(agent)
+      await window.api.fs.writeFile(`${projectPath}/GEMINI.md`, agent.systemInstructions)
+      await window.api.fs.writeFile(`${projectPath}/CLAUDE.md`, agent.systemInstructions)
+      await window.api.fs.writeFile(`${projectPath}/AGENTS.md`, agent.systemInstructions)
+      localStorage.setItem(`terminal_active_agent:${projectPath}`, agent.id)
+      setActiveAgent(agent)
       setIsOpen(false)
     } catch (err) {
       console.error('Erro ao aplicar agente:', err)
@@ -52,22 +71,24 @@ export default function AgentSelector({ projectPath, activeAgent, onSelectAgent 
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative min-w-0" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition text-[11px] font-medium"
-        style={{ borderColor: 'var(--line)', backgroundColor: 'var(--surface-overlay)', color: 'var(--tx-secondary)' }}
-        title="Selecione o Agente de IA para o projeto"
+        className="flex items-center gap-1.5 max-w-full pl-1.5 pr-1.5 py-1 rounded-md transition group"
+        style={{ backgroundColor: isOpen ? 'var(--line-subtle)' : 'transparent' }}
+        onMouseEnter={e => { if (!isOpen) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'var(--line-subtle)' }}
+        onMouseLeave={e => { if (!isOpen) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent' }}
+        title="Agente de IA — clique para alterar as instruções do projeto"
       >
-        <i className="ri-robot-2-line text-blue-400 text-xs" />
-        <span className="truncate max-w-[110px] tx-secondary">
-          {activeAgent ? activeAgent.name : 'Carregando...'}
+        <i className="ri-robot-2-line text-blue-400 text-base flex-shrink-0 leading-none flex items-center relative -top-px" />
+        <span className="text-[13px] font-semibold tx-secondary truncate max-w-[140px] leading-none">
+          {activeAgent.name}
         </span>
-        <i className={`ri-arrow-down-s-line tx-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <i className={`ri-arrow-down-s-line tx-muted text-sm transition-transform flex-shrink-0 leading-none flex items-center ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-1.5 w-76 editor-dropdown max-h-[360px] overflow-y-auto">
+        <div className="absolute left-0 mt-1.5 w-[280px] editor-dropdown max-h-[360px] overflow-y-auto z-50">
           <div className="p-2 flex-shrink-0" style={{ borderBottom: '1px solid var(--line)', backgroundColor: 'var(--surface-overlay)' }}>
             <span className="text-[9px] font-semibold tx-muted uppercase tracking-widest block px-1">
               Agente de Instrução AI

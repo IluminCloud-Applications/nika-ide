@@ -76,6 +76,22 @@ export function generateCssFileContent(root: Record<string, string>, dark: Recor
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-width, 6px);
+    height: var(--scrollbar-width, 6px);
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--scrollbar-track, var(--background)));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--scrollbar-thumb, var(--border)));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
 }
 `
   return css

@@ -1,10 +1,13 @@
 import { ipcRenderer } from 'electron'
 
 // Console e Rede do preview são capturados no processo principal via CDP
-// (ver src/main/ipc/webview-devtools.ts). Aqui só mantemos a ponte de
-// postMessage usada pelo inspector.
+// (ver src/main/ipc/webview-devtools.ts).
+//
+// O inspector agora se comunica via executeJavaScript direto
+// (window.__nikainspector), sem necessidade de ponte IPC.
+// Este preload mantém apenas o shim de window.parent como fallback legado.
 
-// 1. Shim window.parent to redirect postMessage to host (for inspector compatibility)
+// Shim window.parent.postMessage → sendToHost (fallback para compatibilidade)
 try {
   Object.defineProperty(window, 'parent', {
     value: {
@@ -19,16 +22,15 @@ try {
   console.error('Failed to shim window.parent:', e)
 }
 
-// Receive messages from host and dispatch them as standard MessageEvents
+// Forwarda respostas legadas do inspector para o host (apenas tipos seguros)
+const RESPONSE_TYPES = new Set([
+  '__LS_INSPECTOR_CLICK__',
+  '__LS_INSPECTOR_DEACTIVATE__',
+  '__LS_INSPECTOR_NO_SOURCE__',
+])
+
 window.addEventListener('message', (e) => {
-  if (e.data && typeof e.data === 'object' && e.data.type?.startsWith('__LS_INSPECTOR_')) {
+  if (e.data && typeof e.data === 'object' && RESPONSE_TYPES.has(e.data.type)) {
     ipcRenderer.sendToHost('webview-message', e.data)
   }
-})
-
-ipcRenderer.on('webview-postmessage', (_, message) => {
-  window.dispatchEvent(new MessageEvent('message', {
-    data: message,
-    origin: window.location.origin
-  }))
 })

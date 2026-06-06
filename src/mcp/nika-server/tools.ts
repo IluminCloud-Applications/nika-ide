@@ -141,5 +141,18 @@ export const TOOLS = [
       },
       required: ['slug']
     }
+  },
+  {
+    name: 'create_doc',
+    description: 'Cria ou atualiza uma documentação de biblioteca/API no Nika IDE. Isso permite que a IA salve novas especificações técnicas que o usuário enviar para consulta futura.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Nome amigável da biblioteca ou API (ex: "Stripe", "NextAuth")' },
+        description: { type: 'string', description: 'Breve descrição de qual API/Lib se trata' },
+        content: { type: 'string', description: 'O conteúdo em formato Markdown com exemplos de código, endpoints e parâmetros' }
+      },
+      required: ['name', 'description', 'content']
+    }
   }
 ]
