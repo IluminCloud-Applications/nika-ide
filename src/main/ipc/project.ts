@@ -238,16 +238,30 @@ export function registerProjectHandlers() {
 
   ipcMain.handle('projects:create', async (_, details: {
     name: string; description: string; color: string; path: string; imagePath?: string; isStudio?: boolean
+    template?: 'saas' | 'opensource' | 'automation'
   }) => {
-    const { name, description, color, path: projectPath, imagePath, isStudio } = details
+    const { name, description, color, path: projectPath, imagePath, isStudio, template } = details
 
     if (!fs.existsSync(projectPath)) {
       fs.mkdirSync(projectPath, { recursive: true })
     }
 
-    const templateDir = app.isPackaged
-      ? path.join(process.resourcesPath, 'templates', 'project-template')
-      : path.join(app.getAppPath(), 'templates', 'project-template')
+    // Map the chosen template to its folder. SaaS is the default (project-template).
+    const templateFolder = template === 'opensource'
+      ? 'opensource-template'
+      : template === 'automation'
+        ? 'automation-template'
+        : 'project-template'
+
+    const templatesRoot = app.isPackaged
+      ? path.join(process.resourcesPath, 'templates')
+      : path.join(app.getAppPath(), 'templates')
+
+    let templateDir = path.join(templatesRoot, templateFolder)
+    // Fallback to the default template if the chosen one is missing
+    if (!fs.existsSync(templateDir)) {
+      templateDir = path.join(templatesRoot, 'project-template')
+    }
 
     if (fs.existsSync(templateDir)) {
       // Copy template but skip .agents/skills and .claude/skills — we'll only copy enabled skills below
@@ -377,7 +391,12 @@ export function registerProjectHandlers() {
       status: 'draft',
       publishedHash: null,
       createdAt: new Date().toISOString(),
-      isStudio: !!isStudio
+      isStudio: !!isStudio,
+      template: templateFolder === 'opensource-template'
+        ? 'opensource'
+        : templateFolder === 'automation-template'
+          ? 'automation'
+          : 'saas'
     }
     projects.push(newProject)
     saveProjects(projects)

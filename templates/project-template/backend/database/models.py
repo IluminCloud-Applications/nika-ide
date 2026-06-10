@@ -14,6 +14,7 @@ class User(Base):
         server_default=text("gen_random_uuid()")
     )
     email = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=True)
     password = Column(String, nullable=False)  # Hashed password
     created_at = Column(
         DateTime,

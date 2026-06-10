@@ -1,0 +1,36 @@
+version: '3.8'
+
+# Development compose used by the IDE. The backend serves only the API here;
+# the frontend runs separately via Vite (port 5177) and proxies /api to it.
+# For PRODUCTION use the single-image build at ./Dockerfile (frontend + backend).
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8742:8742"
+    volumes:
+      - ./backend:/app
+    environment:
+      - ENV=development
+
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=nika_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -13,6 +13,7 @@ interface ProjectDetails {
   path: string
   imagePath?: string
   isStudio?: boolean
+  template?: 'saas' | 'opensource' | 'automation'
 }
 contextBridge.exposeInMainWorld('api', {
   projects: {

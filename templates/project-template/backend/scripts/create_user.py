@@ -32,16 +32,18 @@ def main():
         user = db.query(User).filter(User.email == email).first()
         if user:
             user.password = get_password_hash(password)
+            user.name = "Nika"
             db.commit()
-            print(f"[SUCCESS] User '{email}' already exists. Password reset to '{password}'.")
+            print(f"[SUCCESS] User '{email}' already exists. Password reset/name set to '{password}'.")
         else:
             new_user = User(
                 email=email,
-                password=get_password_hash(password)
+                password=get_password_hash(password),
+                name="Nika"
             )
             db.add(new_user)
             db.commit()
-            print(f"[SUCCESS] Default user '{email}' created with password '{password}'.")
+            print(f"[SUCCESS] Default user '{email}' created with name 'Nika' and password '{password}'.")
     except Exception as e:
         db.rollback()
         print(f"[ERROR] Execution failed: {str(e)}")

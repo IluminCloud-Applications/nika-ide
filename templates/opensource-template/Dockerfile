@@ -1,0 +1,27 @@
+# ── Production single image (frontend + backend) ─────────────────────────────
+# Builds the React frontend and serves it statically from FastAPI.
+# Result: ONE image where the frontend lives at "/" and the API at "/api".
+# Run with: docker build -t my-app . && docker run -p 8742:8742 my-app
+
+# Stage 1 — build the frontend
+FROM node:20-slim AS frontend
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2 — backend + bundled static frontend
+FROM python:3.10-slim
+WORKDIR /app
+
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/ ./
+# Drop the built SPA into backend/static so main.py serves it from "/"
+COPY --from=frontend /frontend/dist ./static
+
+EXPOSE 8742
+
+CMD ["python", "main.py"]

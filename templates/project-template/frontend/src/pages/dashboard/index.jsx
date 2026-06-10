@@ -114,6 +114,13 @@ export default function Dashboard({ user, onLogout, theme, onToggleTheme }) {
               <CardDescription>Informações obtidas via JWT Token</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {user?.name && (
+                <div className="space-y-1">
+                  <div className="text-xs text-muted-foreground">Nome do Usuário</div>
+                  <div className="text-sm font-medium text-foreground break-all">{user.name}</div>
+                </div>
+              )}
+
               <div className="space-y-1">
                 <div className="text-xs text-muted-foreground">E-mail do Usuário</div>
                 <div className="text-sm font-medium text-foreground break-all">{user?.email || 'N/A'}</div>

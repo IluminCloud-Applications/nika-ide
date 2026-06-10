@@ -66,6 +66,13 @@ export default function UserModal({ isOpen, onClose, projectPath, isRunning, onA
             className="flex items-center justify-between px-3.5 py-2.5 text-xs"
             style={{ borderBottom: '1px solid var(--line-subtle)' }}
           >
+            <span className="tx-muted font-medium">Nome</span>
+            <span className="font-semibold tx-primary font-mono select-all">Nika</span>
+          </div>
+          <div
+            className="flex items-center justify-between px-3.5 py-2.5 text-xs"
+            style={{ borderBottom: '1px solid var(--line-subtle)' }}
+          >
             <span className="tx-muted font-medium">E-mail</span>
             <span className="font-semibold tx-primary font-mono select-all">nika@test.com</span>
           </div>

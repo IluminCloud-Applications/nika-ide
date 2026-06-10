@@ -1,10 +1,42 @@
 import React, { useState, useEffect } from 'react'
-import { FolderPlus, Loader2, ImagePlus, X } from 'lucide-react'
+import { FolderPlus, Loader2, ImagePlus, X, Users, KeyRound, Bot, Info } from 'lucide-react'
 import ModalShell, { ModalHeader, ModalFooter, FieldLabel } from '../../../components/layout/ModalShell'
 
 function slugify(text: string) {
   return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
+
+type TemplateId = 'saas' | 'opensource' | 'automation'
+
+const TEMPLATES: {
+  id: TemplateId
+  label: string
+  tagline: string
+  description: string
+  icon: React.ReactNode
+}[] = [
+  {
+    id: 'saas',
+    label: 'SaaS Multiusu\u00e1rio',
+    tagline: 'Produto com v\u00e1rios clientes',
+    description: 'App com cadastro e login de m\u00faltiplos usu\u00e1rios, ideal para produtos vendidos como servi\u00e7o (assinaturas, contas separadas). Frontend e backend independentes, com CORS e vari\u00e1veis de ambiente.',
+    icon: <Users className="w-4 h-4" />,
+  },
+  {
+    id: 'opensource',
+    label: 'White Label / Self-Hosted',
+    tagline: 'Inst\u00e2ncia \u00fanica com Setup',
+    description: 'App de inst\u00e2ncia \u00fanica com tela de Setup inicial (como WordPress, n8n ou Mautic): o primeiro acesso cria o \u00fanico administrador. Sem CORS e sem ENV \u2014 o backend serve o frontend, ent\u00e3o tudo roda em uma \u00fanica imagem Docker.',
+    icon: <KeyRound className="w-4 h-4" />,
+  },
+  {
+    id: 'automation',
+    label: 'Automa\u00e7\u00f5es & Agentes IA',
+    tagline: 'Foco no backend Python',
+    description: 'Focado no backend Python para rodar automa\u00e7\u00f5es e agentes de IA. O frontend \u00e9 m\u00ednimo, apenas indicando que o servi\u00e7o est\u00e1 online. Roda em uma \u00fanica imagem Docker.',
+    icon: <Bot className="w-4 h-4" />,
+  },
+]
 
 const COLORS = [
   { value: '#3b82f6', label: 'Azul' },
@@ -19,7 +51,7 @@ const COLORS = [
 interface CreateProjectModalProps {
   isOpen: boolean
   onClose: () => void
-  onCreate: (details: { name: string; description: string; color: string; path: string; imagePath?: string }) => Promise<void>
+  onCreate: (details: { name: string; description: string; color: string; path: string; imagePath?: string; template?: TemplateId }) => Promise<void>
   creating: boolean
   workspacePath: string
 }
@@ -31,6 +63,7 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate, creating
   const [projectPath, setProjectPath] = useState('')
   const [imagePath, setImagePath]     = useState<string | undefined>()
   const [imgSrc, setImgSrc]           = useState<string | null>(null)
+  const [template, setTemplate]       = useState<TemplateId>('saas')
 
   const hasWorkspace = !!workspacePath
 
@@ -56,9 +89,9 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate, creating
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !projectPath) return
-    await onCreate({ name, description, color, path: projectPath, imagePath })
+    await onCreate({ name, description, color, path: projectPath, imagePath, template })
     setName(''); setDescription(''); setColor('#3b82f6')
-    setProjectPath(''); setImagePath(undefined); setImgSrc(null)
+    setProjectPath(''); setImagePath(undefined); setImgSrc(null); setTemplate('saas')
   }
 
   if (!isOpen) return null
@@ -130,6 +163,49 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate, creating
             rows={3}
             className="input-field resize-none"
           />
+        </div>
+
+        {/* Template */}
+        <div className="space-y-2">
+          <FieldLabel>Modelo de Projeto</FieldLabel>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {TEMPLATES.map(tpl => {
+              const active = template === tpl.id
+              return (
+                <button
+                  key={tpl.id}
+                  type="button"
+                  onClick={() => setTemplate(tpl.id)}
+                  className={`group relative text-left p-3 rounded-xl border-2 transition-all duration-150 ${active ? 'shadow-lg' : 'opacity-80 hover:opacity-100'}`}
+                  style={{
+                    borderColor: active ? color : 'var(--line)',
+                    backgroundColor: active ? color + '12' : 'var(--surface-overlay)',
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: color + '22', color }}
+                    >
+                      {tpl.icon}
+                    </span>
+                    <span title={tpl.description} className="ml-auto tx-faint hover:text-foreground transition">
+                      <Info className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <div className="text-[13px] font-semibold leading-tight">{tpl.label}</div>
+                  <div className="text-[10px] tx-faint mt-0.5">{tpl.tagline}</div>
+
+                  {/* Tooltip on hover */}
+                  <div className="pointer-events-none absolute left-0 right-0 top-full mt-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                    <div className="rounded-lg border p-2.5 text-[10px] leading-snug shadow-xl" style={{ borderColor: 'var(--line)', backgroundColor: 'var(--surface-overlay)' }}>
+                      {tpl.description}
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Color */}

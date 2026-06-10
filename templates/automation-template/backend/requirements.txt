@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+httpx
+
+# LLM / Agentes (LangChain + Google Gemini)
+langchain
+langchain-google-genai
+
+# Agendamento de automações
+APScheduler
+
+# Cache / filas / estado
+redis

@@ -35,7 +35,7 @@ export default function ProjectsPage({ onSelectProject }: { onSelectProject: (p:
     } catch {}
   }
 
-  const handleCreate = async (details: { name: string; description: string; color: string; path: string; imagePath?: string }) => {
+  const handleCreate = async (details: { name: string; description: string; color: string; path: string; imagePath?: string; template?: 'saas' | 'opensource' | 'automation' }) => {
     setCreating(true)
     try {
       const created = await window.api.projects.create(details)

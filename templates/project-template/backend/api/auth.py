@@ -11,6 +11,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 class UserSignup(BaseModel):
     email: str
     password: str
+    name: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: str
@@ -58,7 +59,8 @@ def register(data: UserSignup, db: Session = Depends(get_db)):
     # Create new user
     new_user = User(
         email=data.email,
-        password=get_password_hash(data.password)
+        password=get_password_hash(data.password),
+        name=data.name
     )
     db.add(new_user)
     db.commit()
@@ -72,6 +74,7 @@ def register(data: UserSignup, db: Session = Depends(get_db)):
         "user": {
             "id": str(new_user.id),
             "email": new_user.email,
+            "name": new_user.name,
             "created_at": new_user.created_at.isoformat() if new_user.created_at else None
         }
     }
@@ -93,6 +96,7 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         "user": {
             "id": str(user.id),
             "email": user.email,
+            "name": user.name,
             "created_at": user.created_at.isoformat() if user.created_at else None
         }
     }
@@ -103,5 +107,6 @@ def get_me(user: User = Depends(get_current_user)):
     return {
         "id": str(user.id),
         "email": user.email,
+        "name": user.name,
         "created_at": user.created_at.isoformat() if user.created_at else None
     }

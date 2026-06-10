@@ -1,0 +1,100 @@
+/* =============================================================================
+ * DESIGN SYSTEM — FONTE ÚNICA DE VERDADE
+ * -----------------------------------------------------------------------------
+ * Este arquivo é controlado pelo Estúdio de Design do Nika IDE. Ele define os
+ * tokens de cor/raio do tema (em HSL "H S% L%"). Os componentes do app NÃO devem
+ * usar cores fixas (ex.: bg-[#09090b], text-zinc-400, bg-black); devem usar os
+ * tokens semânticos: bg-background, text-foreground, bg-card, text-card-foreground,
+ * border-border, bg-primary, text-primary, bg-muted, text-muted-foreground, etc.
+ * Assim, trocar o design aqui re-estiliza o app inteiro automaticamente.
+ *
+ * NÃO edite este arquivo manualmente fora do Estúdio de Design.
+ * ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  /* :root é o tema ativo exibido pelo app por padrão. */
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+    --studio-spacing: 1.5rem;
+    --scrollbar-width: 6px;
+    --scrollbar-thumb: 240 5.9% 90%;
+    --scrollbar-track: 0 0% 100%;
+  }
+
+  /* .dark é o tema alternativo, ativado quando o elemento raiz tem a classe "dark". */
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --radius: 0.5rem;
+    --studio-spacing: 1.5rem;
+    --scrollbar-width: 6px;
+    --scrollbar-thumb: 240 3.7% 15.9%;
+    --scrollbar-track: 240 10% 3.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-width, 6px);
+    height: var(--scrollbar-width, 6px);
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--scrollbar-track, var(--background)));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--scrollbar-thumb, var(--border)));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}

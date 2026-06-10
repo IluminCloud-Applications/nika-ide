@@ -1,0 +1,24 @@
+version: '3.8'
+
+# Development compose used by the IDE. Backend-only (no database, no auth).
+# The frontend status page runs separately via Vite (port 5177) and proxies
+# /api here. For PRODUCTION use the single-image build at ./Dockerfile.
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8742:8742"
+    volumes:
+      - ./backend:/app
+    environment:
+      - ENV=development
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
