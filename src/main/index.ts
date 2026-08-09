@@ -15,17 +15,19 @@ import { startBrowserBridge } from './ipc/browser-bridge'
 import { registerDocsHandlers } from './ipc/docs'
 import { registerTunnelHandlers } from './ipc/tunnel'
 
-// Patch stderr to ignore benign Electron/webview navigation errors (abort, refused, etc.)
+// Patch stderr to ignore benign Electron/webview navigation and viz software compositor errors
 const originalStderrWrite = process.stderr.write
 // @ts-ignore
 process.stderr.write = function (chunk: any, encoding?: any, callback?: any): boolean {
   const str = chunk ? chunk.toString() : ''
   if (
-    str.includes('GUEST_VIEW_MANAGER_CALL') &&
-    (str.includes('ERR_ABORTED') ||
-      str.includes('ERR_CONNECTION_REFUSED') ||
-      str.includes('ERR_FAILED') ||
-      str.includes('ERR_NAME_NOT_RESOLVED'))
+    str.includes('GUEST_VIEW_MANAGER_CALL') ||
+    str.includes('rejectAndCleanup') ||
+    str.includes('browser_init') ||
+    str.includes('(-3) loading') ||
+    str.includes('Frame latency is negative') ||
+    str.includes('zygote_linux') ||
+    str.includes('Broken pipe')
   ) {
     const cb = typeof encoding === 'function' ? encoding : callback
     if (cb) cb()
@@ -34,7 +36,11 @@ process.stderr.write = function (chunk: any, encoding?: any, callback?: any): bo
   return originalStderrWrite.apply(this, arguments as any)
 }
 
-app.disableHardwareAcceleration()
+// Prevents shared memory (/dev/shm) exhaustion in webview processes on Linux, which causes zygote broken pipes
+app.commandLine.appendSwitch('disable-dev-shm-usage')
+// Prevents GPU process crashes on Linux drivers/sandboxing
+app.commandLine.appendSwitch('disable-gpu-sandbox')
+
 app.setName('Nika IDE')
 
 // Stable WM_CLASS / Wayland app_id so the Linux dock/taskbar can match the

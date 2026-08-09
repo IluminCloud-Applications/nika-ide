@@ -235,9 +235,11 @@ export function registerWebviewDevtools(getHostWindow: () => BrowserWindow | nul
 
           let response = ''
           try {
-            const body: any = await dbg.sendCommand('Network.getResponseBody', { requestId: params.requestId })
-            response = body?.base64Encoded ? '[Binary response]' : (body?.body || '')
-            if (response.length > MAX_BODY) response = response.slice(0, MAX_BODY) + '\n…[truncated]'
+            if (!contents.isDestroyed() && dbg.isAttached()) {
+              const body: any = await dbg.sendCommand('Network.getResponseBody', { requestId: params.requestId })
+              response = body?.base64Encoded ? '[Binary response]' : (body?.body || '')
+              if (response.length > MAX_BODY) response = response.slice(0, MAX_BODY) + '\n…[truncated]'
+            }
           } catch {
             response = ''
           }
@@ -279,13 +281,20 @@ export function registerWebviewDevtools(getHostWindow: () => BrowserWindow | nul
       }
     })
 
-    contents.on('destroyed', () => {
+    const cleanup = () => {
       attached.delete(contents.id)
       requests.clear()
       if (activeWebview === contents) activeWebview = null
       try {
         if (dbg.isAttached()) dbg.detach()
       } catch {}
+    }
+
+    contents.on('render-process-gone', (_evt, details) => {
+      console.warn(`[webview-devtools] webview render process gone: ${details.reason}`)
+      cleanup()
     })
+
+    contents.on('destroyed', cleanup)
   })
 }

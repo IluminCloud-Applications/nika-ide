@@ -5,5 +5,5 @@
 
 **Exemplo:**
 ```bash
-./scripts/release.sh 0.4.7
+./scripts/release.sh 0.4.8
 ```

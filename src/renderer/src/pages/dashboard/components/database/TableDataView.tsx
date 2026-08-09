@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw, ChevronLeft, ChevronRight, Ban, Table2, Edit3, X, Plus } from 'lucide-react'
 import AddRowModal from './AddRowModal'
+import JsonKeyValueEditor from './JsonKeyValueEditor'
 
 interface TableDataViewProps {
   projectPath: string
@@ -47,7 +48,16 @@ export default function TableDataView({ projectPath, tableName, tableData, schem
   const handleCellDoubleClick = (row: any, columnName: string, columnType: string) => {
     if (!pkName) return
     setEditingCell({ row, columnName, columnType })
-    setEditValue(row[columnName] === null ? '' : String(row[columnName]))
+    
+    const val = row[columnName]
+    if (val === null) {
+      setEditValue('')
+    } else if (typeof val === 'object') {
+      setEditValue(JSON.stringify(val, null, 2))
+    } else {
+      setEditValue(String(val))
+    }
+    
     setUpdateError(null)
   }
 
@@ -58,6 +68,16 @@ export default function TableDataView({ projectPath, tableName, tableData, schem
     let newValue: any = editValue
     if (editingCell.columnType.toLowerCase().includes('bool')) {
       newValue = editValue === '' ? null : editValue === 'true'
+    } else if (editingCell.columnType.toLowerCase().includes('json')) {
+      if (editValue === '') {
+        newValue = null
+      } else {
+        try {
+          newValue = JSON.parse(editValue)
+        } catch(e) {
+          newValue = editValue // Se falhar, tenta salvar como string (o banco pode rejeitar ou aceitar se não for json restrito)
+        }
+      }
     } else if (editValue === '') {
       newValue = null
     }
@@ -207,6 +227,8 @@ export default function TableDataView({ projectPath, tableName, tableData, schem
                 <option value="false">false</option>
                 <option value="">NULL</option>
               </select>
+            ) : editingCell.columnType.toLowerCase().includes('json') ? (
+              <JsonKeyValueEditor value={editValue} onChange={setEditValue} />
             ) : (
               <textarea value={editValue} onChange={e => setEditValue(e.target.value)} rows={3} placeholder="Valor (deixe vazio para NULL)" className="w-full px-3 py-2 rounded-xl text-xs font-mono outline-none resize-none" style={{ backgroundColor: 'var(--surface-overlay)', border: '1px solid var(--line)', color: 'var(--tx-primary)' }} />
             )}

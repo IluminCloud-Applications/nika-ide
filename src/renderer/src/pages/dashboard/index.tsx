@@ -290,11 +290,18 @@ export default function DashboardPage({
     }
   }, [isRunning, previewReady, previewPalette])
 
+  const lastMouseMoveRef = useRef<number>(0)
+
   // Executa JS diretamente dentro do webview (mais confiável que IPC bridge)
   const execInWebview = useCallback((code: string): Promise<any> => {
     const wv: any = iframeRef.current
     if (!wv || typeof wv.executeJavaScript !== 'function') return Promise.resolve(null)
-    return wv.executeJavaScript(code, true).catch(() => null)
+    try {
+      if (typeof wv.isDestroyed === 'function' && wv.isDestroyed()) return Promise.resolve(null)
+      return wv.executeJavaScript(code, true).catch(() => null)
+    } catch {
+      return Promise.resolve(null)
+    }
   }, [])
 
   // ESC desativa o inspector
@@ -383,8 +390,12 @@ export default function DashboardPage({
     reinjectPreviewOnLoad()
   }, [inspectorActive, execInWebview, ensureInspectorInjected, reinjectPreviewOnLoad])
 
-  // Encaminha mousemove do overlay para o webview via executeJavaScript
+  // Encaminha mousemove do overlay para o webview via executeJavaScript (throttled ~35ms)
   const handleOverlayMouseMove = useCallback((e: React.MouseEvent) => {
+    const now = Date.now()
+    if (now - lastMouseMoveRef.current < 35) return
+    lastMouseMoveRef.current = now
+
     const wv = iframeRef.current
     if (!wv) return
     const rect = wv.getBoundingClientRect()

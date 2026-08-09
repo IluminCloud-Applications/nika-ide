@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Terminal as XTerm } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
+import { WebLinksAddon } from '@xterm/addon-web-links'
+import { setupTerminalCopyMenu } from '../../utils/terminalCopy'
 import { useTerminalContext } from '../../context/TerminalContext'
 import '@xterm/xterm/css/xterm.css'
 
@@ -35,7 +37,14 @@ export default function FloatingTerminalConsole({
 
     const fit = new FitAddon()
     term.loadAddon(fit)
+    try {
+      term.loadAddon(new WebLinksAddon((_event, uri) => {
+        window.api.system.openUrl(uri)
+      }))
+    } catch {}
     term.open(containerRef.current)
+
+    const cleanupCopyMenu = setupTerminalCopyMenu(term, containerRef.current)
 
     // Write historical buffer first
     term.write(session.dataBuffer)
@@ -81,6 +90,7 @@ export default function FloatingTerminalConsole({
     return () => {
       observer.disconnect()
       unsubscribe()
+      cleanupCopyMenu()
       term.dispose()
       xtermRef.current = null
       fitRef.current = null

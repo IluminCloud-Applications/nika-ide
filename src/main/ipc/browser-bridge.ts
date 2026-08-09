@@ -44,11 +44,9 @@ async function ensureActiveWebview(): Promise<Electron.WebContents> {
   // Aguarda até o webview ficar ativo (máximo 15 segundos)
   const startTime = Date.now()
   while (Date.now() - startTime < 15000) {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 300))
     wc = browserCapture.getActiveWebview()
-    if (wc) {
-      // Pequeno delay extra para garantir que carregou
-      await new Promise(resolve => setTimeout(resolve, 1500))
+    if (wc && !wc.isDestroyed()) {
       return wc
     }
   }

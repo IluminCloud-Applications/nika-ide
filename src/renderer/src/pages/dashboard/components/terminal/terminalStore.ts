@@ -9,6 +9,7 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import { setupTerminalCopyMenu } from '../../../../utils/terminalCopy'
 
 export interface StoredTerminal {
   term: Terminal
@@ -18,6 +19,7 @@ export interface StoredTerminal {
   tabId: string
   dataCleanup: (() => void) | null
   exitCleanup: (() => void) | null
+  copyMenuCleanup: (() => void) | null
   exited: boolean
 }
 
@@ -73,8 +75,14 @@ export function create(tabId: string, terminalId: string): StoredTerminal {
 
   const fit = new FitAddon()
   term.loadAddon(fit)
-  try { term.loadAddon(new WebLinksAddon()) } catch {}
+  try {
+    term.loadAddon(new WebLinksAddon((_event, uri) => {
+      window.api.system.openUrl(uri)
+    }))
+  } catch {}
   term.open(wrapper)
+
+  const copyMenuCleanup = setupTerminalCopyMenu(term, wrapper)
 
   // User input → PTY
   term.onData(data => window.api.terminal.write(terminalId, data))
@@ -87,7 +95,7 @@ export function create(tabId: string, terminalId: string): StoredTerminal {
 
   const instance: StoredTerminal = {
     term, fit, wrapper, terminalId, tabId,
-    dataCleanup, exitCleanup: null, exited: false,
+    dataCleanup, exitCleanup: null, copyMenuCleanup, exited: false,
   }
 
   // PTY exit → mark exited
@@ -138,6 +146,7 @@ export function destroy(tabId: string): void {
   if (!inst) return
   inst.dataCleanup?.()
   inst.exitCleanup?.()
+  inst.copyMenuCleanup?.()
   try { inst.term.dispose() } catch {}
   inst.wrapper.remove()
   instances.delete(tabId)
